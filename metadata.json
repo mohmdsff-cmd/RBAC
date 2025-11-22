@@ -1,0 +1,5 @@
+{
+  "name": "Copy of PrimeSecure RBAC",
+  "description": "A secure, role-based React application utilizing PrimeReact for UI components and Redux Toolkit for state management.",
+  "requestFramePermissions": []
+}
