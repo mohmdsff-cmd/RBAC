@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
@@ -6,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Gallery from './pages/Gallery';
 import Reports from './pages/Reports';
+import Search from './pages/Search';
+import ActiveCases from './pages/ActiveCases';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
@@ -35,6 +38,26 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS]}>
                 <Gallery />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Search */}
+          <Route 
+            path="/search" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <Search />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Active Cases */}
+          <Route 
+            path="/active-cases" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_REPORTS, UserRole.VIEW_SYSTEM]}>
+                <ActiveCases />
               </ProtectedRoute>
             } 
           />

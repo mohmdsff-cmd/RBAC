@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MegaMenu } from 'primereact/megamenu';
 import { Button } from 'primereact/button';
@@ -34,6 +35,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     label: 'General',
                     items: [
                         { label: 'Dashboard', icon: 'pi pi-chart-bar', command: () => navigate('/dashboard') },
+                        { label: 'Search Records', icon: 'pi pi-search', command: () => navigate('/search') },
+                        { label: 'Active Cases', icon: 'pi pi-list', command: () => navigate('/active-cases') },
                         { label: 'My Profile', icon: 'pi pi-user' },
                         { label: 'Settings', icon: 'pi pi-cog' }
                     ]

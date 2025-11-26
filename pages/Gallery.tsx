@@ -4,6 +4,7 @@ import { Tooltip } from 'primereact/tooltip';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
 import { ImageUploader } from '../components/ImageUploader';
 
 // Initial Mock Data
@@ -31,6 +32,7 @@ const Gallery: React.FC = () => {
   const [zoom, setZoom] = useState(1);
   const [showInfo, setShowInfo] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [metaFilter, setMetaFilter] = useState('');
   
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -209,15 +211,34 @@ const Gallery: React.FC = () => {
       {/* Right Sidebar - Metadata */}
       {showInfo && (
         <div className="w-80 bg-slate-50 border-l border-slate-200 flex flex-col shrink-0 transition-all duration-300">
-            <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
-                <div>
-                    <h3 className="font-bold text-slate-800">Metadata</h3>
-                    <p className="text-xs text-slate-500">File information</p>
+            <div className="p-4 border-b border-slate-200 bg-white">
+                <div className="flex justify-between items-center mb-3">
+                    <div>
+                        <h3 className="font-bold text-slate-800">Metadata</h3>
+                        <p className="text-xs text-slate-500">File information</p>
+                    </div>
+                    <Button icon="pi pi-times" onClick={() => setShowInfo(false)} rounded text severity="secondary" size="small" aria-label="Close" />
                 </div>
-                <Button icon="pi pi-times" onClick={() => setShowInfo(false)} rounded text severity="secondary" size="small" aria-label="Close" />
+                <span className="p-input-icon-left w-full">
+                    <i className="pi pi-search text-slate-400" />
+                    <InputText 
+                        value={metaFilter} 
+                        onChange={(e) => setMetaFilter(e.target.value)} 
+                        placeholder="Filter properties..." 
+                        className="w-full p-inputtext-sm" 
+                    />
+                </span>
             </div>
             <div className="overflow-y-auto flex-1 custom-scrollbar">
-                <DataTable value={activeImage.metadata} stripedRows size="small" className="text-sm border-none">
+                <DataTable 
+                    value={activeImage.metadata} 
+                    stripedRows 
+                    size="small" 
+                    className="text-sm border-none"
+                    globalFilter={metaFilter}
+                    globalFilterFields={['property', 'value']}
+                    emptyMessage="No metadata found."
+                >
                     <Column field="property" header="Property" className="font-semibold text-slate-600" style={{ width: '40%' }}></Column>
                     <Column field="value" header="Value"></Column>
                 </DataTable>
