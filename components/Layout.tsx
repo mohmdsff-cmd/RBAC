@@ -104,20 +104,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   ];
 
-  const start = <div className="text-xl font-bold text-slate-800 mr-4 flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}><i className="pi pi-lock text-primary"></i> PrimeSecure</div>;
+  const start = <div className="text-xl font-bold text-800 mr-4 flex align-items-center gap-2 cursor-pointer" onClick={() => navigate('/')}><i className="pi pi-lock text-primary"></i> PrimeSecure</div>;
 
   const end = user ? (
-    <div className="flex items-center gap-3">
-      <div className="flex flex-col items-end text-sm">
-        <span className="font-semibold text-slate-700">{user.username}</span>
+    <div className="flex align-items-center gap-3">
+      <div className="flex flex-column align-items-end text-sm">
+        <span className="font-semibold text-700">{user.username}</span>
         <div className="flex gap-1">
             {user.roles.slice(0, 2).map(r => (
-                 <span key={r} className="text-[10px] text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded uppercase tracking-wider">{r.replace('VIEW_', '')}</span>
+                 <span key={r} className="text-xs text-500 bg-gray-200 px-2 py-1 border-round uppercase">{r.replace('VIEW_', '')}</span>
             ))}
-            {user.roles.length > 2 && <span className="text-[10px] text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">+ {user.roles.length - 2}</span>}
+            {user.roles.length > 2 && <span className="text-xs text-500 bg-gray-200 px-2 py-1 border-round">+ {user.roles.length - 2}</span>}
         </div>
       </div>
-      {user.avatarUrl && <img src={user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full border border-slate-300" />}
+      {user.avatarUrl && <img src={user.avatarUrl} alt="Avatar" className="w-2rem h-2rem border-circle border-1 border-300" />}
       <Button 
         label="Logout" 
         icon="pi pi-power-off" 
@@ -132,13 +132,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="shadow-sm bg-white">
-        <div className="container mx-auto">
-            <MegaMenu model={items} orientation="horizontal" start={start} end={end} className="border-none rounded-none bg-transparent px-4 py-3" breakpoint="960px" />
+    <div className="min-h-screen surface-ground">
+      <div className="shadow-1 surface-card">
+        <div className="w-full max-w-7xl mx-auto">
+            <MegaMenu model={items} orientation="horizontal" start={start} end={end} className="border-none border-noround bg-transparent px-4 py-3" breakpoint="960px" />
         </div>
       </div>
-      <main className="container mx-auto p-4 md:p-6">
+      <main className="w-full max-w-7xl mx-auto p-4 md:p-6">
         {children}
       </main>
     </div>

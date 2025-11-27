@@ -77,40 +77,44 @@ const ActiveCases: React.FC = () => {
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-            <Card title="Case Distribution" className="shadow-sm">
-                 <div className="flex justify-center">
-                    <Chart type="doughnut" data={chartData} options={chartOptions} className="w-full md:w-[300px]" />
-                 </div>
-            </Card>
-            <Card title="Performance Metrics" className="shadow-sm">
-                 <div className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded">
-                        <span className="text-slate-600">Avg. Resolution Time</span>
-                        <span className="font-bold text-slate-800">4.2 Days</span>
+        <div className="grid pt-2">
+            <div className="col-12 md:col-6">
+                <Card title="Case Distribution" className="shadow-1 h-full">
+                    <div className="flex justify-content-center">
+                        <Chart type="doughnut" data={chartData} options={chartOptions} className="w-full md:w-20rem" />
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded">
-                        <span className="text-slate-600">Backlog Clearance</span>
-                        <span className="font-bold text-green-600">+12%</span>
+                </Card>
+            </div>
+            <div className="col-12 md:col-6">
+                <Card title="Performance Metrics" className="shadow-1 h-full">
+                    <div className="flex flex-column gap-3">
+                        <div className="flex justify-content-between align-items-center p-3 surface-ground border-round">
+                            <span className="text-600">Avg. Resolution Time</span>
+                            <span className="font-bold text-800">4.2 Days</span>
+                        </div>
+                        <div className="flex justify-content-between align-items-center p-3 surface-ground border-round">
+                            <span className="text-600">Backlog Clearance</span>
+                            <span className="font-bold text-green-600">+12%</span>
+                        </div>
+                        <div className="flex justify-content-between align-items-center p-3 surface-ground border-round">
+                            <span className="text-600">Error Rate</span>
+                            <span className="font-bold text-red-500">2.1%</span>
+                        </div>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded">
-                        <span className="text-slate-600">Error Rate</span>
-                        <span className="font-bold text-red-500">2.1%</span>
-                    </div>
-                 </div>
-            </Card>
+                </Card>
+            </div>
         </div>
     );
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Active Case Management</h1>
-        <p className="text-slate-500">Track and manage cases across different operational stages.</p>
+    <div className="w-full max-w-7xl mx-auto">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-800 m-0">Active Case Management</h1>
+        <p className="text-500 m-0 mt-2">Track and manage cases across different operational stages.</p>
       </div>
 
-      <div className="card bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+      <div className="surface-card border-round shadow-1 border-1 border-200 overflow-hidden">
         <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)}>
             
             {/* Tab 1: Pending */}

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { DataTable } from 'primereact/datatable';
@@ -33,7 +34,7 @@ const AdminPanel: React.FC = () => {
     return (
         <div className="flex flex-wrap gap-1">
             {rowData.roles.map(role => (
-                <Tag key={role} value={role.replace('_', ' ')} className="text-[10px]" severity="info" />
+                <Tag key={role} value={role.replace('_', ' ')} className="text-xs" severity="info" />
             ))}
         </div>
     );
@@ -80,24 +81,24 @@ const AdminPanel: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-column gap-4">
       <Toast ref={toast} />
       <ConfirmDialog />
       
-      <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-sm">
-        <div className="flex items-center">
+      <div className="surface-0 border-left-3 border-red-500 p-4 border-round shadow-1">
+        <div className="flex align-items-center">
           <div className="flex-shrink-0">
             <i className="pi pi-lock text-red-500 text-2xl"></i>
           </div>
           <div className="ml-3">
-            <p className="text-sm text-red-700">
+            <p className="text-sm text-red-700 m-0">
               <span className="font-bold">Restricted Access:</span> You are viewing this page because you have <strong>ADMIN</strong> privileges.
             </p>
           </div>
         </div>
       </div>
 
-      <Card title="User Management System" className="shadow-sm">
+      <Card title="User Management System" className="shadow-1">
         <Toolbar start={startContent} className="mb-4" />
         <DataTable value={users} paginator rows={5} rowsPerPageOptions={[5, 10, 25]} tableStyle={{ minWidth: '50rem' }}>
             <Column field="name" header="Name" sortable style={{ width: '25%' }}></Column>

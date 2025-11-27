@@ -1,7 +1,7 @@
+
 import React, { useRef } from 'react';
 import { FileUpload, FileUploadHandlerEvent } from 'primereact/fileupload';
 import { Toast } from 'primereact/toast';
-import { ProgressBar } from 'primereact/progressbar';
 import { Button } from 'primereact/button';
 import { Tag } from 'primereact/tag';
 
@@ -42,7 +42,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             {uploadButton}
             {cancelButton}
             <div className="flex align-items-center gap-3 ml-auto">
-                <span className="text-sm text-slate-500">Max size: {maxFileSize / 1000000}MB</span>
+                <span className="text-sm text-500">Max size: {maxFileSize / 1000000}MB</span>
             </div>
         </div>
     );
@@ -66,9 +66,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const emptyTemplate = () => {
     return (
-        <div className="flex items-center justify-center flex-col py-8">
-            <i className="pi pi-image mt-3 p-5 text-5xl text-slate-400 border-2 border-dashed border-slate-300 rounded-full" />
-            <span className="text-lg text-slate-500 mt-4">Drag and Drop Images Here</span>
+        <div className="flex align-items-center justify-content-center flex-column py-6">
+            <i className="pi pi-image mt-3 p-5 text-5xl text-400 border-2 border-dashed border-300 border-circle" />
+            <span className="text-lg text-500 mt-4">Drag and Drop Images Here</span>
         </div>
     );
   };

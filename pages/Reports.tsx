@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Calendar } from 'primereact/calendar';
@@ -40,14 +41,14 @@ const Reports: React.FC = () => {
     };
 
     return (
-        <div className="flex justify-center items-start pt-10 min-h-[80vh]">
+        <div className="flex justify-content-center align-items-start pt-6 min-h-screen">
             <Toast ref={toast} />
-            <Card title="Generate Daily Report" subTitle="Select parameters to export system data" className="w-full max-w-2xl shadow-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <Card title="Generate Daily Report" subTitle="Select parameters to export system data" className="w-full md:w-6 shadow-3">
+                <div className="grid formgrid p-fluid mt-4">
                     
                     {/* Date Selection */}
-                    <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
-                        <label htmlFor="reportDate" className="font-medium text-slate-700">Report Date</label>
+                    <div className="field col-12">
+                        <label htmlFor="reportDate" className="font-medium text-700">Report Date</label>
                         <span className="p-input-icon-right w-full">
                             <Calendar 
                                 id="reportDate" 
@@ -61,11 +62,11 @@ const Reports: React.FC = () => {
                         </span>
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 border-b border-slate-100 my-2"></div>
+                    <div className="col-12 border-bottom-1 border-200 my-3"></div>
 
                     {/* Primary Sort */}
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="primarySort" className="font-medium text-slate-700">Primary Sort Criteria</label>
+                    <div className="field col-12 md:col-6">
+                        <label htmlFor="primarySort" className="font-medium text-700">Primary Sort Criteria</label>
                          <Dropdown 
                             id="primarySort" 
                             value={primarySort} 
@@ -78,8 +79,8 @@ const Reports: React.FC = () => {
                     </div>
 
                     {/* Secondary Sort */}
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="secondarySort" className="font-medium text-slate-700">Secondary Sort Criteria</label>
+                    <div className="field col-12 md:col-6">
+                        <label htmlFor="secondarySort" className="font-medium text-700">Secondary Sort Criteria</label>
                          <Dropdown 
                             id="secondarySort" 
                             value={secondarySort} 
@@ -94,9 +95,9 @@ const Reports: React.FC = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-100">
-                    <div className="text-sm text-slate-500">
-                        Format: <span className="font-semibold text-slate-700">PDF, CSV</span>
+                <div className="flex justify-content-between align-items-center mt-5 pt-4 border-top-1 border-200">
+                    <div className="text-sm text-500">
+                        Format: <span className="font-semibold text-700">PDF, CSV</span>
                     </div>
                     <Button 
                         label={loading ? "Generating..." : "Download Report"} 

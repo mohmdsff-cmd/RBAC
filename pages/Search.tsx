@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Splitter, SplitterPanel } from 'primereact/splitter';
 import { Tree } from 'primereact/tree';
@@ -181,7 +182,7 @@ const Search: React.FC = () => {
         const newNodes = [policeData, forensicsData, courtData];
         setNodes(newNodes);
 
-        // Auto-select logic: Try to find the first image in the second API (Forensics) as it is most visual
+        // Auto-select logic
         const firstImage = forensicsData.children?.[0]?.children?.[0];
         
         if (firstImage) {
@@ -190,7 +191,6 @@ const Search: React.FC = () => {
             setZoom(1);
             setRotation(0);
         } else {
-            // Fallback to selecting the first root node
             setSelectedNode(policeData);
             setSelectedNodeKey(policeData.key);
         }
@@ -204,8 +204,8 @@ const Search: React.FC = () => {
 
   const onNodeSelect = (e: any) => {
     setSelectedNode(e.node);
-    setZoom(1); // Reset zoom on node change
-    setRotation(0); // Reset rotation on node change
+    setZoom(1); 
+    setRotation(0); 
   };
 
   // Image Toolbar Handlers
@@ -258,11 +258,10 @@ const Search: React.FC = () => {
     }
   };
 
-  // Helper to render the center content based on node type
   const renderCenterContent = () => {
     if (!selectedNode) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-slate-400">
+            <div className="flex flex-column align-items-center justify-content-center h-full text-400">
                 <i className="pi pi-inbox text-5xl mb-3"></i>
                 <p>Select an item from the tree</p>
             </div>
@@ -273,19 +272,19 @@ const Search: React.FC = () => {
 
     if (data.type === 'image' && data.src) {
         return (
-            <div className="w-full h-full flex items-center justify-center bg-slate-900 overflow-hidden relative">
+            <div className="w-full h-full flex align-items-center justify-content-center surface-900 overflow-hidden relative">
                 <img 
                     src={data.src} 
                     alt={selectedNode.label as string} 
-                    className="transition-transform duration-300 ease-out max-w-full max-h-full object-contain shadow-lg"
-                    style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+                    className="transition-transform transition-duration-300 ease-out max-w-full max-h-full shadow-4"
+                    style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, objectFit: 'contain' }}
                 />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col items-center justify-center h-full text-slate-500">
+        <div className="flex flex-column align-items-center justify-content-center h-full text-500">
             <i className={`text-6xl mb-4 ${selectedNode.icon}`}></i>
             <h3 className="text-xl font-semibold">{selectedNode.label}</h3>
             <p className="text-sm mt-2">Preview not available for this type.</p>
@@ -294,16 +293,16 @@ const Search: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-9rem)] gap-4">
+    <div className="flex flex-column md:flex-row gap-4" style={{ height: 'calc(100vh - 9rem)' }}>
         {/* Left Sidebar: Search Configuration */}
-        <div className="w-full md:w-80 flex-shrink-0 flex flex-col">
-            <Card title="Case Search" className="h-full shadow-sm flex flex-col">
-                 <div className="flex flex-col gap-4 h-full">
-                    <p className="text-sm text-slate-500">
+        <div className="w-full md:w-20rem flex-shrink-0 flex flex-column">
+            <Card title="Case Search" className="h-full shadow-1 flex flex-column">
+                 <div className="flex flex-column gap-4 h-full">
+                    <p className="text-sm text-500 m-0">
                         Enter a Case ID to retrieve aggregated data from connected systems.
                     </p>
                     
-                    <form onSubmit={handleSearch} className="flex flex-col gap-3">
+                    <form onSubmit={handleSearch} className="flex flex-column gap-3">
                         <span className="p-input-icon-left w-full">
                             <i className="pi pi-search" />
                             <InputText 
@@ -322,15 +321,15 @@ const Search: React.FC = () => {
                         />
                     </form>
 
-                    <div className="flex-1"></div>
+                    <div className="flex-grow-1"></div>
 
                     {searched && (
-                        <div className="p-3 bg-slate-50 rounded border border-slate-200 mt-auto">
-                             <span className="text-xs text-slate-500 uppercase font-bold tracking-wider">Active Query</span>
-                             <div className="text-xl font-bold text-slate-800 my-1">{searchId}</div>
-                             <div className="flex items-center gap-2 mt-2">
+                        <div className="p-3 surface-ground border-round border-1 border-200 mt-auto">
+                             <span className="text-xs text-500 uppercase font-bold text-center block mb-1">Active Query</span>
+                             <div className="text-xl font-bold text-800 my-1">{searchId}</div>
+                             <div className="flex align-items-center gap-2 mt-2">
                                 <i className="pi pi-check-circle text-green-500"></i>
-                                <span className="text-xs text-slate-600">3 APIs Connected</span>
+                                <span className="text-xs text-600">3 APIs Connected</span>
                              </div>
                         </div>
                     )}
@@ -341,19 +340,19 @@ const Search: React.FC = () => {
         {/* Right Side: Results Area */}
         <div className="flex-1 overflow-hidden h-full">
             {!searched ? (
-                 <div className="h-full flex flex-col items-center justify-center bg-slate-50 rounded border-2 border-dashed border-slate-200">
-                    <div className="text-center text-slate-400 p-6">
+                 <div className="h-full flex flex-column align-items-center justify-content-center surface-ground border-round border-2 border-dashed border-300">
+                    <div className="text-center text-400 p-6">
                         <i className="pi pi-server text-6xl mb-4 opacity-50"></i>
                         <h3 className="text-xl font-medium mb-2">No Data Loaded</h3>
-                        <p className="max-w-xs mx-auto">Enter a valid Case ID in the sidebar to fetch and visualize records.</p>
+                        <p className="max-w-20rem mx-auto">Enter a valid Case ID in the sidebar to fetch and visualize records.</p>
                     </div>
                 </div>
             ) : (
-                <div className="h-full border rounded-lg shadow-sm bg-white overflow-hidden">
+                <div className="h-full border-1 border-300 border-round shadow-1 surface-card overflow-hidden">
                     <Splitter style={{ height: '100%' }}>
                         {/* Panel 1: Tree with Filter */}
-                        <SplitterPanel size={20} minSize={15} className="overflow-hidden flex flex-col">
-                            <div className="p-3 bg-slate-50 border-b font-medium text-slate-700 flex justify-between items-center">
+                        <SplitterPanel size={20} minSize={15} className="overflow-hidden flex flex-column">
+                            <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex justify-content-between align-items-center">
                                 <span>Data Sources</span>
                             </div>
                             <div className="flex-1 overflow-auto custom-scrollbar p-2">
@@ -372,36 +371,36 @@ const Search: React.FC = () => {
                         </SplitterPanel>
 
                         {/* Panel 2: Image Canvas with Toolbar */}
-                        <SplitterPanel size={55} minSize={30} className="overflow-hidden bg-slate-50 relative flex flex-col">
+                        <SplitterPanel size={55} minSize={30} className="overflow-hidden surface-ground relative flex flex-column">
                             {selectedNode && (selectedNode.data as NodeData).type === 'image' && (
-                               <div className="h-14 bg-white/95 backdrop-blur-sm border-b flex items-center justify-between px-3 shadow-sm z-20 shrink-0">
-                                   <span className="text-sm font-medium text-slate-700 truncate max-w-[200px]">{selectedNode.label}</span>
-                                   <div className="flex gap-1 items-center">
+                               <div className="h-4rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
+                                   <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">{selectedNode.label}</span>
+                                   <div className="flex gap-1 align-items-center">
                                         <Tooltip target=".search-toolbar-btn" />
                                         <Button icon="pi pi-search-plus" className="search-toolbar-btn" onClick={handleZoomIn} rounded text severity="secondary" tooltip="Zoom In" />
                                         <Button icon="pi pi-search-minus" className="search-toolbar-btn" onClick={handleZoomOut} rounded text severity="secondary" tooltip="Zoom Out" />
-                                        <div className="w-px h-5 bg-slate-300 mx-1"></div>
+                                        <div className="w-1px h-2rem bg-300 mx-1"></div>
                                         <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} />
                                         <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
-                                        <div className="w-px h-5 bg-slate-300 mx-1"></div>
+                                        <div className="w-1px h-2rem bg-300 mx-1"></div>
                                         <Button icon="pi pi-arrows-alt" className="search-toolbar-btn" onClick={handleFitScreen} rounded text severity="secondary" tooltip="Reset View" />
-                                        <div className="w-px h-5 bg-slate-300 mx-1"></div>
+                                        <div className="w-1px h-2rem bg-300 mx-1"></div>
                                         <Button icon="pi pi-print" className="search-toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
                                         <Button icon="pi pi-download" className="search-toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" />
                                    </div>
                                </div>
                             )}
-                            <div className="flex-1 overflow-hidden relative bg-slate-100">
+                            <div className="flex-1 overflow-hidden relative surface-100">
                                  {renderCenterContent()}
                             </div>
                         </SplitterPanel>
 
                         {/* Panel 3: Metadata */}
-                        <SplitterPanel size={25} minSize={15} className="overflow-hidden flex flex-col">
-                             <div className="p-3 bg-slate-50 border-b font-medium text-slate-700 flex flex-col gap-2">
+                        <SplitterPanel size={25} minSize={15} className="overflow-hidden flex flex-column">
+                             <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex flex-column gap-2">
                                 <span>Metadata</span>
                                 <span className="p-input-icon-left w-full">
-                                    <i className="pi pi-search text-slate-400" />
+                                    <i className="pi pi-search text-400" />
                                     <InputText 
                                         value={metaFilter} 
                                         onChange={(e) => setMetaFilter(e.target.value)} 
@@ -421,11 +420,11 @@ const Search: React.FC = () => {
                                         globalFilterFields={['property', 'value']}
                                         emptyMessage="No metadata found."
                                     >
-                                        <Column field="property" header="Property" className="font-semibold text-slate-600 w-1/3"></Column>
+                                        <Column field="property" header="Property" className="font-semibold text-600 w-4"></Column>
                                         <Column field="value" header="Value"></Column>
                                     </DataTable>
                                 ) : (
-                                    <div className="p-4 text-sm text-slate-500 text-center mt-10">
+                                    <div className="p-4 text-sm text-500 text-center mt-6">
                                         No item selected
                                     </div>
                                 )}
