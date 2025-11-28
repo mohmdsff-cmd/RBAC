@@ -9,6 +9,7 @@ import Gallery from './pages/Gallery';
 import Reports from './pages/Reports';
 import Search from './pages/Search';
 import ActiveCases from './pages/ActiveCases';
+import Help from './pages/Help';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
@@ -68,6 +69,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEW_REPORTS]}>
                 <Reports />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Help (Accessible by standard users) */}
+          <Route 
+            path="/help" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_REPORTS, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM, UserRole.GUEST]}>
+                <Help />
               </ProtectedRoute>
             } 
           />

@@ -37,6 +37,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         { label: 'Dashboard', icon: 'pi pi-chart-bar', command: () => navigate('/dashboard') },
                         { label: 'Search Records', icon: 'pi pi-search', command: () => navigate('/search') },
                         { label: 'Active Cases', icon: 'pi pi-list', command: () => navigate('/active-cases') },
+                        { label: 'Help', icon: 'pi pi-question-circle', command: () => navigate('/help') },
                         { label: 'My Profile', icon: 'pi pi-user' },
                         { label: 'Settings', icon: 'pi pi-cog' }
                     ]
