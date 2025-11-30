@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from 'primereact/button';
 import { Tooltip } from 'primereact/tooltip';
@@ -7,7 +6,7 @@ import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Skeleton } from 'primereact/skeleton';
-import { RadioButton } from 'primereact/radiobutton';
+import { Checkbox } from 'primereact/checkbox';
 
 export interface GalleryItem {
     id: string | number;
@@ -35,7 +34,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     const [currentIndex, setCurrentIndex] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
-    const [viewMode, setViewMode] = useState<'standard' | 'details'>('details');
+    const [showInfo, setShowInfo] = useState(true);
     const [metaFilter, setMetaFilter] = useState('');
     
     // Loaded Data State
@@ -44,7 +43,6 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     const [metaData, setMetaData] = useState<any[]>([]);
 
     const activeItem = items[currentIndex];
-    const showInfo = viewMode === 'details';
 
     // Fetch data when active item changes
     useEffect(() => {
@@ -254,15 +252,15 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                             <Button icon="pi pi-download" className="toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" />
                         </div>
                         
-                        {/* Radio Button Toggle for View Mode */}
+                        {/* Checkbox Toggle for View Mode */}
                         <div className="flex align-items-center gap-3 border-left-1 border-300 pl-3">
                              <div className="flex align-items-center">
-                                <RadioButton inputId="viewStd" name="viewMode" value="standard" checked={viewMode === 'standard'} onChange={(e) => setViewMode(e.value)} />
-                                <label htmlFor="viewStd" className="ml-2 text-sm cursor-pointer">Standard</label>
-                            </div>
-                            <div className="flex align-items-center">
-                                <RadioButton inputId="viewDet" name="viewMode" value="details" checked={viewMode === 'details'} onChange={(e) => setViewMode(e.value)} />
-                                <label htmlFor="viewDet" className="ml-2 text-sm cursor-pointer">With Details</label>
+                                <Checkbox 
+                                    inputId="showDetails" 
+                                    onChange={e => setShowInfo(!!e.checked)} 
+                                    checked={showInfo} 
+                                />
+                                <label htmlFor="showDetails" className="ml-2 text-sm cursor-pointer select-none">Show Details</label>
                             </div>
                         </div>
                     </div>
@@ -283,8 +281,8 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                                 <h3 className="font-bold text-800 m-0">Metadata</h3>
                                 <p className="text-xs text-500 m-0 mt-1">Properties</p>
                             </div>
-                            {/* Close button that sets radio back to standard */}
-                            <Button icon="pi pi-times" onClick={() => setViewMode('standard')} rounded text severity="secondary" size="small" aria-label="Close" />
+                            {/* Close button that toggles checkbox off */}
+                            <Button icon="pi pi-times" onClick={() => setShowInfo(false)} rounded text severity="secondary" size="small" aria-label="Close" />
                         </div>
                         <span className="p-input-icon-left w-full">
                             <i className="pi pi-search text-400" />

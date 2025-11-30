@@ -11,11 +11,10 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-  const location = useLocation();
-
+  
   if (!isAuthenticated || !user) {
-    // Redirect to login, saving the location they were trying to access
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Since we don't have a login page (SSO assumed), we redirect to Unauthorized
+    return <Navigate to="/unauthorized" replace />;
   }
 
   // Check if the user has ANY of the allowed roles

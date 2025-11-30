@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { MegaMenu } from 'primereact/megamenu';
 import { Button } from 'primereact/button';
 import { useNavigate } from 'react-router-dom';
@@ -8,15 +7,68 @@ import { AppDispatch, RootState } from '../store';
 import { logout } from '../slices/authSlice';
 import { UserRole } from '../types';
 import { MenuItem } from 'primereact/menuitem';
+import { Menu } from 'primereact/menu';
+import { Avatar } from 'primereact/avatar';
+import { Badge } from 'primereact/badge';
+import { Dialog } from 'primereact/dialog';
+import { ThemeSelector } from './ThemeSelector';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
+  const userMenu = useRef<Menu>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const hasRole = (rolesToCheck: UserRole[]) => {
     return user?.roles.some(role => rolesToCheck.includes(role)) ?? false;
   };
+
+  const handleLogout = () => {
+    // In a "No Login Page" scenario (SSO), "Logout" typically involves 
+    // killing the local session and reloading/redirecting to the IDP.
+    // For this simulation, we reload the app to re-trigger the "fetchUserProfile" check.
+    dispatch(logout());
+    window.location.reload(); 
+  };
+
+  // User Menu Model
+  const userMenuItems: MenuItem[] = [
+    {
+        template: (item, options) => {
+            return (
+                <div className="p-3 flex flex-column align-items-start gap-2 w-15rem">
+                    <span className="font-bold text-900">{user?.username}</span>
+                    <div className="flex flex-wrap gap-1">
+                        {user?.roles.map(r => (
+                            <span key={r} className="text-xs text-white bg-primary px-2 py-1 border-round uppercase">
+                                {r.replace('VIEW_', '').replace('_', ' ')}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+    },
+    { separator: true },
+    {
+        label: 'My Profile',
+        icon: 'pi pi-user',
+        command: () => navigate('/help') // directing to help/profile area
+    },
+    {
+        label: 'Settings',
+        icon: 'pi pi-cog',
+        command: () => setShowSettings(true)
+    },
+    { separator: true },
+    {
+        label: 'Logout',
+        icon: 'pi pi-power-off',
+        className: 'text-red-500',
+        command: handleLogout
+    }
+  ];
 
   // Mega Menu Model
   const items: MenuItem[] = [
@@ -39,7 +91,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         { label: 'Active Cases', icon: 'pi pi-list', command: () => navigate('/active-cases') },
                         { label: 'Help', icon: 'pi pi-question-circle', command: () => navigate('/help') },
                         { label: 'My Profile', icon: 'pi pi-user' },
-                        { label: 'Settings', icon: 'pi pi-cog' }
+                        { label: 'Settings', icon: 'pi pi-cog', command: () => setShowSettings(true) }
                     ]
                 },
                 {
@@ -109,32 +161,31 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const end = user ? (
     <div className="flex align-items-center gap-3">
-      <div className="flex flex-column align-items-end text-sm">
-        <span className="font-semibold text-700">{user.username}</span>
-        <div className="flex gap-1">
-            {user.roles.slice(0, 2).map(r => (
-                 <span key={r} className="text-xs text-500 bg-gray-200 px-2 py-1 border-round uppercase">{r.replace('VIEW_', '')}</span>
-            ))}
-            {user.roles.length > 2 && <span className="text-xs text-500 bg-gray-200 px-2 py-1 border-round">+ {user.roles.length - 2}</span>}
+        <div className="flex flex-column align-items-end hidden md:flex">
+             <span className="font-semibold text-700 text-sm">Welcome back</span>
+             <span className="text-xs text-500">{user.username}</span>
         </div>
-      </div>
-      {user.avatarUrl && <img src={user.avatarUrl} alt="Avatar" className="w-2rem h-2rem border-circle border-1 border-300" />}
-      <Button 
-        label="Logout" 
-        icon="pi pi-power-off" 
-        severity="danger" 
-        text 
-        size="small"
-        onClick={() => dispatch(logout())} 
-      />
+        
+        <Menu model={userMenuItems} popup ref={userMenu} id="popup_menu_left" />
+        
+        <div className="relative cursor-pointer" onClick={(event) => userMenu.current?.toggle(event)} aria-controls="popup_menu_left" aria-haspopup>
+            <Avatar 
+                image={user.avatarUrl} 
+                icon={!user.avatarUrl ? 'pi pi-user' : undefined}
+                shape="circle" 
+                size="large" 
+                className="surface-200 text-700 border-1 border-300" 
+            />
+            <Badge severity="success" className="absolute" style={{ bottom: '-2px', right: '-2px', width: '10px', height: '10px', minWidth: '10px', borderRadius: '50%', padding: 0 }}></Badge>
+        </div>
     </div>
   ) : (
-    <Button label="Login" icon="pi pi-user" size="small" onClick={() => navigate('/login')} />
+    <Button label="Login" icon="pi pi-user" size="small" onClick={() => window.location.reload()} />
   );
 
   return (
     <div className="min-h-screen surface-ground">
-      <div className="shadow-1 surface-card">
+      <div className="shadow-1 surface-card sticky top-0 z-5">
         <div className="w-full max-w-7xl mx-auto">
             <MegaMenu model={items} orientation="horizontal" start={start} end={end} className="border-none border-noround bg-transparent px-4 py-3" breakpoint="960px" />
         </div>
@@ -142,6 +193,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <main className="w-full max-w-7xl mx-auto p-4 md:p-6">
         {children}
       </main>
+
+      <Dialog header="Application Settings" visible={showSettings} style={{ width: '30vw' }} onHide={() => setShowSettings(false)}>
+          <ThemeSelector />
+      </Dialog>
     </div>
   );
 };
