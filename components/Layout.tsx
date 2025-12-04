@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from 'react';
 import { MegaMenu } from 'primereact/megamenu';
 import { Button } from 'primereact/button';
@@ -128,11 +129,43 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         ]
     },
     {
+        label: 'Sports',
+        icon: 'pi pi-clock',
+        visible: !!user, // Show to authenticated users
+        items: [
+            [
+                {
+                    label: 'Football',
+                    items: [{ label: 'Kits' }, { label: 'Shoes' }, { label: 'Shorts' }, { label: 'Training' }]
+                }
+            ],
+            [
+                {
+                    label: 'Running',
+                    items: [{ label: 'Accessories' }, { label: 'Shoes' }, { label: 'T-Shirts' }, { label: 'Shorts' }]
+                }
+            ],
+            [
+                {
+                    label: 'Swimming',
+                    items: [{ label: 'Kickboard' }, { label: 'Nose Clip' }, { label: 'Swimsuits' }, { label: 'Paddles' }]
+                }
+            ],
+            [
+                {
+                    label: 'Tennis',
+                    items: [{ label: 'Balls' }, { label: 'Rackets' }, { label: 'Shoes' }, { label: 'Training' }]
+                }
+            ]
+        ]
+    },
+    {
         label: 'Administration',
         icon: 'pi pi-shield',
         // Visible if Admin OR has specific view permissions for sub-items
         visible: hasRole([UserRole.ADMIN, UserRole.VIEW_SYSTEM]),
-        className: 'font-bold text-red-500',
+        // Add right-aligned-submenu class to force the panel to expand to the left
+        className: 'font-bold text-red-500 right-aligned-submenu',
         items: [
             [
                 {
@@ -163,7 +196,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="flex align-items-center gap-3">
         <div className="flex flex-column align-items-end hidden md:flex">
              <span className="font-semibold text-700 text-sm">Welcome back</span>
-             <span className="text-xs text-500">{user.username}</span>
         </div>
         
         <Menu model={userMenuItems} popup ref={userMenu} id="popup_menu_left" />

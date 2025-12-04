@@ -13,6 +13,29 @@
     <!-- PrimeFlex -->
     <link rel="stylesheet" href="https://unpkg.com/primeflex@3.3.1/primeflex.min.css" />
     
+    <style>
+      /* Center the root menu items between start and end slots in horizontal mode */
+      .p-megamenu.p-megamenu-horizontal .p-megamenu-root-list {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Default behavior: Center the MegaMenu panel relative to the menu item */
+      /* This ensures "Workplace" panel appears centered under the "Workplace" link */
+      .p-megamenu-horizontal .p-megamenu-root-list > .p-menuitem > .p-megamenu-panel {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      /* Override for items on the far right edge to prevent overflow (e.g. Administration) */
+      /* Resets the left positioning and transform to anchor it to the right */
+      .p-megamenu .p-menuitem.right-aligned-submenu .p-megamenu-panel {
+        left: auto;
+        right: 0;
+        transform: none;
+      }
+    </style>
+
   <script type="importmap">
 {
   "imports": {
