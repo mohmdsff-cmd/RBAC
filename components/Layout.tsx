@@ -82,6 +82,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         label: 'Workplace',
         icon: 'pi pi-briefcase',
         visible: !!user,
+        className: 'submenu-align-left', // Align Left: Expands to the right
         items: [
             [
                 {
@@ -131,7 +132,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     {
         label: 'Sports',
         icon: 'pi pi-clock',
-        visible: !!user, // Show to authenticated users
+        visible: !!user,
+        className: 'submenu-align-center', // Align Center: Expands both ways
         items: [
             [
                 {
@@ -164,8 +166,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         icon: 'pi pi-shield',
         // Visible if Admin OR has specific view permissions for sub-items
         visible: hasRole([UserRole.ADMIN, UserRole.VIEW_SYSTEM]),
-        // Add right-aligned-submenu class to force the panel to expand to the left
-        className: 'font-bold text-red-500 right-aligned-submenu',
+        // Align Right: Expands to the left to prevent overflow
+        className: 'font-bold text-red-500 submenu-align-right',
         items: [
             [
                 {
@@ -219,7 +221,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="min-h-screen surface-ground">
       <div className="shadow-1 surface-card sticky top-0 z-5">
         <div className="w-full max-w-7xl mx-auto">
-            <MegaMenu model={items} orientation="horizontal" start={start} end={end} className="border-none border-noround bg-transparent px-4 py-3" breakpoint="960px" />
+            <MegaMenu model={items} orientation="horizontal" className="border-none border-noround bg-transparent px-4 py-3" breakpoint="960px" />
         </div>
       </div>
       <main className="w-full max-w-7xl mx-auto p-4 md:p-6">
