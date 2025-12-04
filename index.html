@@ -1,3 +1,18 @@
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react-redux": "https://aistudiocdn.com/react-redux@^9.2.0",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.0",
+    "@reduxjs/toolkit": "https://aistudiocdn.com/@reduxjs/toolkit@^2.11.0",
+    "primereact/": "https://aistudiocdn.com/primereact@^10.9.7/",
+    "react-pdf": "https://esm.sh/react-pdf@9.1.0?external=react,react-dom",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.4.168"
+  }
+}
+</script>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -14,18 +29,19 @@
     <link rel="stylesheet" href="https://unpkg.com/primeflex@3.3.1/primeflex.min.css" />
     
     <style>
-      /* Center the root menu items between start and end slots in horizontal mode */
-      /* .p-megamenu.p-megamenu-horizontal .p-megamenu-root-list {
-        flex: 1;
-        justify-content: center;
-      } */
-
       /* --- MegaMenu Panel Alignment Utilities --- */
+
+      /* Ensure the menu item parent is relative so absolute positioning works relative to it */
+      .p-megamenu .p-menuitem {
+        position: relative;
+      }
 
       /* General Panel constraints to prevent cutoff */
       .p-megamenu .p-megamenu-panel {
         max-height: 70vh; /* Prevent extending beyond viewport height */
         overflow-y: auto;  /* Enable scrolling if content is too long */
+        width: auto;       /* Allow width to adjust based on content */
+        min-width: 15rem;
       }
 
       /* Ensure columns don't hide overflow content */
@@ -33,4 +49,53 @@
         overflow: visible;
       }
 
-      /*
+      /* --- Specific Alignment Classes (applied to the MenuItem) --- */
+
+      /* LEFT ALIGN: Panel anchors to the left of the link, expands right */
+      .submenu-align-left > .p-megamenu-panel {
+        left: 0 !important;
+        right: auto !important;
+        transform: none !important;
+      }
+
+      /* CENTER ALIGN: Panel centers relative to the link */
+      .submenu-align-center > .p-megamenu-panel {
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+      }
+
+      /* RIGHT ALIGN: Panel anchors to the right of the link, expands left */
+      .submenu-align-right > .p-megamenu-panel {
+        left: auto !important;
+        right: 0 !important;
+        transform: none !important;
+      }
+
+      /* --- Mobile Responsiveness --- */
+      @media screen and (max-width: 960px) {
+        /* On mobile, stack columns vertically */
+        .p-megamenu-panel .p-megamenu-grid {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .p-megamenu-panel .p-megamenu-col {
+          width: 100% !important;
+          padding: 0.5rem 0;
+        }
+
+        /* Reset positioning for mobile vertical menu if needed */
+        .p-megamenu-mobile .p-megamenu-panel {
+            position: static !important;
+            transform: none !important;
+            min-width: 100% !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

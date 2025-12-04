@@ -153,13 +153,11 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         if (contentData.mimeType === 'application/pdf') {
             return (
                 <div className="w-full h-full relative">
-                    <object
-                        data={`data:application/pdf;base64,${contentData.base64}`}
-                        type="application/pdf"
-                        className="w-full h-full"
-                    >
-                        <p>Alternative text - include a link <a href={`data:application/pdf;base64,${contentData.base64}`}>to the PDF!</a></p>
-                    </object>
+                    <iframe
+                        src={`data:application/pdf;base64,${contentData.base64}`}
+                        className="w-full h-full border-none"
+                        title="PDF Viewer"
+                    />
                 </div>
             );
         }
