@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from 'primereact/button';
 import { Tooltip } from 'primereact/tooltip';
@@ -7,6 +8,7 @@ import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Skeleton } from 'primereact/skeleton';
 import { Checkbox } from 'primereact/checkbox';
+import { mockFetchContent, mockFetchMetadata } from '../services/mockApi';
 
 export interface GalleryItem {
     id: string | number;
@@ -17,20 +19,23 @@ export interface GalleryItem {
 }
 
 export interface GalleryViewerProps {
-    items: GalleryItem[];
-    onFetchContent: (id: string | number) => Promise<{ base64: string; mimeType: string }>;
-    onFetchMetadata: (id: string | number) => Promise<any[]>;
+    items?: GalleryItem[];
+    docId?: string | number;
+    onFetchContent?: (id: string | number) => Promise<{ base64: string; mimeType: string }>;
+    onFetchMetadata?: (id: string | number) => Promise<any[]>;
     className?: string;
     style?: React.CSSProperties;
 }
 
 export const GalleryViewer: React.FC<GalleryViewerProps> = ({ 
-    items, 
-    onFetchContent, 
-    onFetchMetadata,
+    items,
+    docId,
+    onFetchContent = mockFetchContent,
+    onFetchMetadata = mockFetchMetadata,
     className,
     style
 }) => {
+    const [localItems, setLocalItems] = useState<GalleryItem[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
@@ -42,7 +47,26 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     const [contentData, setContentData] = useState<{ base64: string; mimeType: string } | null>(null);
     const [metaData, setMetaData] = useState<any[]>([]);
 
-    const activeItem = items[currentIndex];
+    // Initialize Items based on props
+    useEffect(() => {
+        if (items && items.length > 0) {
+            setLocalItems(items);
+            setCurrentIndex(0);
+        } else if (docId) {
+            // Single document mode
+            setLocalItems([{
+                id: docId,
+                title: `Document ${docId}`,
+                type: 'image', // Default, will be refined by content fetch if needed
+                thumbnail: undefined
+            }]);
+            setCurrentIndex(0);
+        } else {
+            setLocalItems([]);
+        }
+    }, [items, docId]);
+
+    const activeItem = localItems[currentIndex];
 
     // Fetch data when active item changes
     useEffect(() => {
@@ -82,13 +106,13 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
     // Navigation Handlers
     const handleNext = () => {
-        if (items.length === 0) return;
-        setCurrentIndex((prev) => (prev + 1) % items.length);
+        if (localItems.length === 0) return;
+        setCurrentIndex((prev) => (prev + 1) % localItems.length);
     };
 
     const handlePrev = () => {
-        if (items.length === 0) return;
-        setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
+        if (localItems.length === 0) return;
+        setCurrentIndex((prev) => (prev - 1 + localItems.length) % localItems.length);
     };
 
     const selectImage = (index: number) => {
@@ -183,46 +207,50 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         );
     };
 
-    if (!items || items.length === 0) {
-        return <div className="p-5 text-center text-500">No items in gallery.</div>;
+    if (localItems.length === 0) {
+        return <div className="p-5 text-center text-500">No item loaded.</div>;
     }
+
+    const showSidebar = localItems.length > 1;
 
     return (
         <div className={`flex border-1 border-300 border-round shadow-2 overflow-hidden surface-card ${className}`} style={{ height: 'calc(100vh - 9rem)', ...style }}>
-            {/* Left Sidebar - Thumbnails */}
-            <div className="w-10rem surface-ground border-right-1 border-300 flex flex-column flex-shrink-0">
-                <div className="p-3 border-bottom-1 border-300 surface-card flex align-items-center justify-content-between shadow-1 z-1">
-                    <Button icon="pi pi-arrow-left" onClick={handlePrev} rounded text severity="secondary" aria-label="Previous" size="small" />
-                    <span className="font-bold text-600 text-sm">{currentIndex + 1} / {items.length}</span>
-                    <Button icon="pi pi-arrow-right" onClick={handleNext} rounded text severity="secondary" aria-label="Next" size="small" />
-                </div>
+            {/* Left Sidebar - Thumbnails (Only if more than 1 item) */}
+            {showSidebar && (
+                <div className="w-10rem surface-ground border-right-1 border-300 flex flex-column flex-shrink-0">
+                    <div className="p-3 border-bottom-1 border-300 surface-card flex align-items-center justify-content-between shadow-1 z-1">
+                        <Button icon="pi pi-arrow-left" onClick={handlePrev} rounded text severity="secondary" aria-label="Previous" size="small" />
+                        <span className="font-bold text-600 text-sm">{currentIndex + 1} / {localItems.length}</span>
+                        <Button icon="pi pi-arrow-right" onClick={handleNext} rounded text severity="secondary" aria-label="Next" size="small" />
+                    </div>
 
-                <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                    <div className="flex flex-column gap-3">
-                        {items.map((item, index) => (
-                            <div 
-                                key={item.id}
-                                onClick={() => selectImage(index)}
-                                className={`cursor-pointer border-round overflow-hidden border-2 transition-all hover:shadow-2 aspect-ratio-square relative flex align-items-center justify-content-center surface-0 ${
-                                    index === currentIndex 
-                                        ? 'border-primary shadow-2' 
-                                        : 'border-transparent opacity-70 hover:opacity-100 hover:border-300'
-                                }`}
-                                style={{ aspectRatio: '1/1' }}
-                            >
-                                {item.thumbnail ? (
-                                    <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
-                                ) : (
-                                    <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image text-500'} text-3xl`} />
-                                )}
-                                {item.type === 'pdf' && item.thumbnail && (
-                                     <div className="absolute bottom-0 right-0 bg-red-500 text-white text-xs px-1 border-round-top-left">PDF</div>
-                                )}
-                            </div>
-                        ))}
+                    <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                        <div className="flex flex-column gap-3">
+                            {localItems.map((item, index) => (
+                                <div 
+                                    key={item.id}
+                                    onClick={() => selectImage(index)}
+                                    className={`cursor-pointer border-round overflow-hidden border-2 transition-all hover:shadow-2 aspect-ratio-square relative flex align-items-center justify-content-center surface-0 ${
+                                        index === currentIndex 
+                                            ? 'border-primary shadow-2' 
+                                            : 'border-transparent opacity-70 hover:opacity-100 hover:border-300'
+                                    }`}
+                                    style={{ aspectRatio: '1/1' }}
+                                >
+                                    {item.thumbnail ? (
+                                        <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image text-500'} text-3xl`} />
+                                    )}
+                                    {item.type === 'pdf' && item.thumbnail && (
+                                        <div className="absolute bottom-0 right-0 bg-red-500 text-white text-xs px-1 border-round-top-left">PDF</div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Center Main Area */}
             <div className="flex-1 flex flex-column relative surface-900 overflow-hidden min-w-0">
