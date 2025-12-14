@@ -110,9 +110,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                             visible: hasRole([UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS])
                         },
                         { 
-                          label: 'Reports', 
+                          label: 'Daily Reports', 
                           icon: 'pi pi-file-pdf',
                           command: () => navigate('/reports'),
+                          visible: hasRole([UserRole.ADMIN, UserRole.VIEW_REPORTS])
+                        },
+                        { 
+                          label: 'Range Reports', 
+                          icon: 'pi pi-calendar-plus',
+                          command: () => navigate('/range-reports'),
                           visible: hasRole([UserRole.ADMIN, UserRole.VIEW_REPORTS])
                         }
                     ]

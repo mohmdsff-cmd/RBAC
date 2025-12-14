@@ -9,6 +9,8 @@ import { Column } from 'primereact/column';
 import { Card } from 'primereact/card';
 import { TreeNode } from 'primereact/treenode';
 import { Tooltip } from 'primereact/tooltip';
+import { AdvancedSearch } from '../components/AdvancedSearch';
+import { SearchCriteria } from '../services/mockApi';
 
 // Mock Data Interfaces
 interface NodeData {
@@ -18,7 +20,7 @@ interface NodeData {
 }
 
 const Search: React.FC = () => {
-  const [searchId, setSearchId] = useState('');
+  const [activeCriteria, setActiveCriteria] = useState<SearchCriteria | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [nodes, setNodes] = useState<TreeNode[]>([]);
@@ -162,15 +164,18 @@ const Search: React.FC = () => {
     };
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchId.trim()) return;
+  const handleSearch = async (criteria: SearchCriteria) => {
+    if (!criteria.term && !criteria.amount && !criteria.cardNumber) return;
 
     setLoading(true);
     setSearched(true);
+    setActiveCriteria(criteria);
     setSelectedNode(null);
     setSelectedNodeKey(undefined);
     
+    // Use the term as ID for tree generation, fallback to 'Unknown' if searching by amount/card
+    const searchId = criteria.term || 'Unknown';
+
     try {
         // Fetch from all 3 "APIs" simultaneously
         const [policeData, forensicsData, courtData] = await Promise.all([
@@ -295,41 +300,33 @@ const Search: React.FC = () => {
   return (
     <div className="flex flex-column md:flex-row gap-4" style={{ height: 'calc(100vh - 9rem)' }}>
         {/* Left Sidebar: Search Configuration */}
-        <div className="w-full md:w-20rem flex-shrink-0 flex flex-column">
+        <div className="w-full md:w-22rem flex-shrink-0 flex flex-column">
             <Card title="Case Search" className="h-full shadow-1 flex flex-column">
                  <div className="flex flex-column gap-4 h-full">
                     <p className="text-sm text-500 m-0">
-                        Enter a Case ID to retrieve aggregated data from connected systems.
+                        Enter a criteria to retrieve aggregated data from connected systems.
                     </p>
                     
-                    <form onSubmit={handleSearch} className="flex flex-column gap-3">
-                        <span className="p-input-icon-left w-full">
-                            <i className="pi pi-search" />
-                            <InputText 
-                                placeholder="Case ID (e.g. 100)" 
-                                value={searchId} 
-                                onChange={(e) => setSearchId(e.target.value)} 
-                                className="w-full"
-                            />
-                        </span>
-                        <Button 
-                            label="Search Records" 
-                            icon="pi pi-search" 
-                            loading={loading} 
-                            type="submit" 
-                            className="w-full" 
-                        />
-                    </form>
+                    {/* Reusable Advanced Search Component */}
+                    <AdvancedSearch 
+                        onSearch={handleSearch} 
+                        loading={loading} 
+                        layout="vertical"
+                        contextLabel="Search Records"
+                    />
 
                     <div className="flex-grow-1"></div>
 
-                    {searched && (
+                    {searched && activeCriteria && (
                         <div className="p-3 surface-ground border-round border-1 border-200 mt-auto">
                              <span className="text-xs text-500 uppercase font-bold text-center block mb-1">Active Query</span>
-                             <div className="text-xl font-bold text-800 my-1">{searchId}</div>
-                             <div className="flex align-items-center gap-2 mt-2">
-                                <i className="pi pi-check-circle text-green-500"></i>
-                                <span className="text-xs text-600">3 APIs Connected</span>
+                             <div className="text-xl font-bold text-800 my-1">
+                                {activeCriteria.term || 'Filters Applied'}
+                             </div>
+                             <div className="flex flex-wrap gap-2 mt-2">
+                                <span className="text-xs px-2 py-1 bg-green-100 text-green-700 border-round">3 APIs</span>
+                                {activeCriteria.amount && <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 border-round">${activeCriteria.amount}</span>}
+                                {activeCriteria.cardNumber && <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 border-round">Card: ...{activeCriteria.cardNumber}</span>}
                              </div>
                         </div>
                     )}
@@ -344,14 +341,14 @@ const Search: React.FC = () => {
                     <div className="text-center text-400 p-6">
                         <i className="pi pi-server text-6xl mb-4 opacity-50"></i>
                         <h3 className="text-xl font-medium mb-2">No Data Loaded</h3>
-                        <p className="max-w-20rem mx-auto">Enter a valid Case ID in the sidebar to fetch and visualize records.</p>
+                        <p className="max-w-20rem mx-auto">Use the sidebar to search across Police, Forensics, and Court databases.</p>
                     </div>
                 </div>
             ) : (
                 <div className="h-full border-1 border-300 border-round shadow-1 surface-card overflow-hidden">
                     <Splitter style={{ height: '100%' }}>
                         {/* Panel 1: Tree with Filter */}
-                        <SplitterPanel size={20} minSize={15} className="overflow-hidden flex flex-column">
+                        <SplitterPanel size={25} minSize={20} className="overflow-hidden flex flex-column">
                             <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex justify-content-between align-items-center">
                                 <span>Data Sources</span>
                             </div>
@@ -371,7 +368,7 @@ const Search: React.FC = () => {
                         </SplitterPanel>
 
                         {/* Panel 2: Image Canvas with Toolbar */}
-                        <SplitterPanel size={55} minSize={30} className="overflow-hidden surface-ground relative flex flex-column">
+                        <SplitterPanel size={50} minSize={30} className="overflow-hidden surface-ground relative flex flex-column">
                             {selectedNode && (selectedNode.data as NodeData).type === 'image' && (
                                <div className="h-4rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
                                    <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">{selectedNode.label}</span>

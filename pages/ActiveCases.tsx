@@ -7,6 +7,8 @@ import { Tag } from 'primereact/tag';
 import { Button } from 'primereact/button';
 import { Card } from 'primereact/card';
 import { Chart } from 'primereact/chart';
+import { AdvancedSearch } from '../components/AdvancedSearch';
+import { searchActiveCases, SearchCriteria } from '../services/mockApi';
 
 // Mock Data Types
 interface Case {
@@ -16,10 +18,50 @@ interface Case {
   priority: 'High' | 'Medium' | 'Low';
   date: string;
   status: string;
+  amount?: number;
+  cardNumber?: string;
 }
 
 const ActiveCases: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchResults, setSearchResults] = useState<Case[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const handleSearch = async (criteria: SearchCriteria) => {
+    // If criteria are empty, clear search
+    if (!criteria.term && !criteria.amount && !criteria.cardNumber) {
+        setSearchResults(null);
+        setIsSearching(false);
+        return;
+    }
+
+    setSearchLoading(true);
+    try {
+        const results = await searchActiveCases(criteria);
+        setSearchResults(results);
+        setIsSearching(true);
+    } catch (e) {
+        console.error(e);
+    } finally {
+        setSearchLoading(false);
+    }
+  };
+
+  const actionTemplate = () => (
+    <Button icon="pi pi-search" rounded text severity="info" aria-label="View" />
+  );
+
+  const priorityTemplate = (rowData: Case) => {
+    const color = rowData.priority === 'High' ? 'danger' : rowData.priority === 'Medium' ? 'warning' : 'success';
+    return <Tag value={rowData.priority} severity={color} />;
+  };
+
+  const amountTemplate = (rowData: Case) => {
+      return rowData.amount ? 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(rowData.amount) 
+        : '-';
+  };
 
   // Reusable Case List Component
   const CaseList = ({ status, subStatus }: { status: string, subStatus: string }) => {
@@ -30,17 +72,9 @@ const ActiveCases: React.FC = () => {
       assignee: ['Officer K.', 'Det. Miller', 'Agent Smith'][i % 3],
       priority: i % 3 === 0 ? 'High' : i % 2 === 0 ? 'Medium' : 'Low',
       date: new Date().toLocaleDateString(),
-      status: status
+      status: status,
+      amount: Math.floor(Math.random() * 5000)
     }));
-
-    const priorityTemplate = (rowData: Case) => {
-      const color = rowData.priority === 'High' ? 'danger' : rowData.priority === 'Medium' ? 'warning' : 'success';
-      return <Tag value={rowData.priority} severity={color} />;
-    };
-
-    const actionTemplate = () => (
-      <Button icon="pi pi-search" rounded text severity="info" aria-label="View" />
-    );
 
     return (
       <div className="pt-2">
@@ -49,6 +83,7 @@ const ActiveCases: React.FC = () => {
           <Column field="subject" header="Subject"></Column>
           <Column field="assignee" header="Assignee"></Column>
           <Column field="date" header="Date" sortable></Column>
+          <Column field="amount" header="Amount" body={amountTemplate} sortable></Column>
           <Column field="priority" header="Priority" body={priorityTemplate} sortable></Column>
           <Column body={actionTemplate} style={{ width: '4rem' }}></Column>
         </DataTable>
@@ -114,57 +149,85 @@ const ActiveCases: React.FC = () => {
         <p className="text-500 m-0 mt-2">Track and manage cases across different operational stages.</p>
       </div>
 
-      <div className="surface-card border-round shadow-1 border-1 border-200 overflow-hidden">
-        <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)}>
-            
-            {/* Tab 1: Pending */}
-            <TabPanel header="Pending" leftIcon="pi pi-clock mr-2">
-                <div className="p-2">
-                    <TabView>
-                        <TabPanel header="Workable">
-                            <CaseList status="Pending" subStatus="Workable" />
-                        </TabPanel>
-                        <TabPanel header="In Progress">
-                            <CaseList status="Pending" subStatus="InProgress" />
-                        </TabPanel>
-                    </TabView>
-                </div>
-            </TabPanel>
-
-            {/* Tab 2: Returned */}
-            <TabPanel header="Returned" leftIcon="pi pi-replay mr-2">
-                <div className="p-2">
-                    <TabView>
-                        <TabPanel header="Workable">
-                            <CaseList status="Returned" subStatus="Workable" />
-                        </TabPanel>
-                        <TabPanel header="In Progress">
-                            <CaseList status="Returned" subStatus="InProgress" />
-                        </TabPanel>
-                    </TabView>
-                </div>
-            </TabPanel>
-
-            {/* Tab 3: Error */}
-            <TabPanel header="Error" leftIcon="pi pi-exclamation-triangle mr-2">
-                 <div className="p-2">
-                    <TabView>
-                        <TabPanel header="Workable">
-                            <CaseList status="Error" subStatus="Workable" />
-                        </TabPanel>
-                        <TabPanel header="In Progress">
-                            <CaseList status="Error" subStatus="InProgress" />
-                        </TabPanel>
-                    </TabView>
-                </div>
-            </TabPanel>
-
-            {/* Tab 4: Report */}
-            <TabPanel header="Reports" leftIcon="pi pi-chart-pie mr-2">
-                <ReportView />
-            </TabPanel>
-        </TabView>
+      <div className="card mb-4 surface-card border-round shadow-1 p-3">
+          <AdvancedSearch 
+            onSearch={handleSearch} 
+            loading={searchLoading} 
+            layout="vertical" 
+            contextLabel="Filter Cases"
+          />
       </div>
+
+      {isSearching ? (
+         <Card title="Search Results" className="shadow-1 border-top-3 border-blue-500">
+            <div className="flex justify-content-between mb-3">
+                <span className="text-500">Found {searchResults?.length || 0} matching records.</span>
+                <Button label="Clear Search" icon="pi pi-times" className="p-button-text" onClick={() => { setIsSearching(false); setSearchResults(null); }} />
+            </div>
+            <DataTable value={searchResults || []} stripedRows size="small" className="text-sm">
+                <Column field="id" header="Case ID" sortable></Column>
+                <Column field="subject" header="Subject"></Column>
+                <Column field="assignee" header="Assignee"></Column>
+                <Column field="status" header="Current Status" body={(r) => <Tag value={r.status} severity="info"/>}></Column>
+                <Column field="amount" header="Amount" body={amountTemplate} sortable></Column>
+                <Column field="cardNumber" header="Card #" sortable></Column>
+                <Column field="priority" header="Priority" body={priorityTemplate} sortable></Column>
+                <Column body={actionTemplate} style={{ width: '4rem' }}></Column>
+            </DataTable>
+         </Card>
+      ) : (
+        <div className="surface-card border-round shadow-1 border-1 border-200 overflow-hidden">
+            <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)}>
+                
+                {/* Tab 1: Pending */}
+                <TabPanel header="Pending" leftIcon="pi pi-clock mr-2">
+                    <div className="p-2">
+                        <TabView>
+                            <TabPanel header="Workable">
+                                <CaseList status="Pending" subStatus="Workable" />
+                            </TabPanel>
+                            <TabPanel header="In Progress">
+                                <CaseList status="Pending" subStatus="InProgress" />
+                            </TabPanel>
+                        </TabView>
+                    </div>
+                </TabPanel>
+
+                {/* Tab 2: Returned */}
+                <TabPanel header="Returned" leftIcon="pi pi-replay mr-2">
+                    <div className="p-2">
+                        <TabView>
+                            <TabPanel header="Workable">
+                                <CaseList status="Returned" subStatus="Workable" />
+                            </TabPanel>
+                            <TabPanel header="In Progress">
+                                <CaseList status="Returned" subStatus="InProgress" />
+                            </TabPanel>
+                        </TabView>
+                    </div>
+                </TabPanel>
+
+                {/* Tab 3: Error */}
+                <TabPanel header="Error" leftIcon="pi pi-exclamation-triangle mr-2">
+                    <div className="p-2">
+                        <TabView>
+                            <TabPanel header="Workable">
+                                <CaseList status="Error" subStatus="Workable" />
+                            </TabPanel>
+                            <TabPanel header="In Progress">
+                                <CaseList status="Error" subStatus="InProgress" />
+                            </TabPanel>
+                        </TabView>
+                    </div>
+                </TabPanel>
+
+                {/* Tab 4: Report */}
+                <TabPanel header="Reports" leftIcon="pi pi-chart-pie mr-2">
+                    <ReportView />
+                </TabPanel>
+            </TabView>
+        </div>
+      )}
     </div>
   );
 };

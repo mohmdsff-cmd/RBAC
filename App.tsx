@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import Gallery from './pages/Gallery';
 import Reports from './pages/Reports';
+import RangeReports from './pages/RangeReports';
 import Search from './pages/Search';
 import ActiveCases from './pages/ActiveCases';
 import Help from './pages/Help';
@@ -86,6 +88,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEW_REPORTS]}>
                 <Reports />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Range Reports (New) */}
+          <Route 
+            path="/range-reports" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEW_REPORTS]}>
+                <RangeReports />
               </ProtectedRoute>
             } 
           />

@@ -1,4 +1,10 @@
 
+export interface SearchCriteria {
+    term?: string;
+    amount?: number | null;
+    cardNumber?: string;
+}
+
 export const mockFetchContent = async (id: string | number): Promise<{ base64: string; mimeType: string }> => {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
@@ -45,4 +51,26 @@ export const mockFetchMetadata = async (id: string | number): Promise<any[]> => 
         { property: 'Classification', value: 'Confidential' },
         { property: 'File Size', value: `${(Math.random() * 5 + 1).toFixed(2)} MB` }
      ];
+};
+
+// Mock Search for Active Cases
+export const searchActiveCases = async (criteria: SearchCriteria): Promise<any[]> => {
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Generate some random results that generally match or just return random stuff for the mock
+    const results = Array.from({ length: 5 }, (_, i) => {
+        const idBase = criteria.term ? criteria.term.replace(/\D/g, '') : '999';
+        return {
+            id: `CS-${idBase}-${i}`,
+            subject: `Investigation relating to ${criteria.term || 'Unknown'}`,
+            assignee: ['Officer K.', 'Det. Miller', 'Agent Smith'][i % 3],
+            priority: i % 2 === 0 ? 'High' : 'Medium',
+            date: new Date().toLocaleDateString(),
+            status: 'Active',
+            amount: criteria.amount || Math.floor(Math.random() * 10000),
+            cardNumber: criteria.cardNumber || `**** **** **** ${1000 + i}`
+        };
+    });
+
+    return results;
 };
