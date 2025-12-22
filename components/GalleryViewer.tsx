@@ -6,30 +6,25 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
-import { Checkbox } from 'primereact/checkbox';
 import { Galleria, GalleriaResponsiveOptions } from 'primereact/galleria';
-import { mockFetchContent, mockFetchMetadata } from '../services/mockApi';
-
-export interface GalleryItem {
-    id: string | number;
-    thumbnail?: string; // Small preview or icon URL
-    title: string;
-    type: 'image' | 'pdf' | 'document';
-    description?: string;
-}
+import { mockFetchContent, mockFetchMetadata, mockFetchGalleryItems, GalleryItem, GalleryMetadataItem } from '../services/mockApi';
 
 export interface GalleryViewerProps {
-    items?: GalleryItem[];
-    docId?: string | number;
+    documentId: string | number;
+    metadata?: GalleryMetadataItem[];
+    showMetadataInitial?: boolean;
+    onFetchItems?: (id: string | number) => Promise<GalleryItem[]>;
     onFetchContent?: (id: string | number) => Promise<{ base64: string; mimeType: string }>;
-    onFetchMetadata?: (id: string | number) => Promise<any[]>;
+    onFetchMetadata?: (id: string | number) => Promise<GalleryMetadataItem[]>;
     className?: string;
     style?: React.CSSProperties;
 }
 
 export const GalleryViewer: React.FC<GalleryViewerProps> = ({ 
-    items,
-    docId,
+    documentId,
+    metadata: propMetadata,
+    showMetadataInitial = false,
+    onFetchItems = mockFetchGalleryItems,
     onFetchContent = mockFetchContent,
     onFetchMetadata = mockFetchMetadata,
     className,
@@ -41,53 +36,55 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     // View State
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
-    const [showInfo, setShowInfo] = useState(true);
+    const [showInfo, setShowInfo] = useState(showMetadataInitial);
     const [metaFilter, setMetaFilter] = useState('');
     
     // Data Loading State
+    const [isItemsLoading, setIsItemsLoading] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [contentData, setContentData] = useState<{ base64: string; mimeType: string } | null>(null);
-    const [metaData, setMetaData] = useState<any[]>([]);
+    const [metaData, setMetaData] = useState<GalleryMetadataItem[]>([]);
 
     const galleriaRef = useRef<Galleria>(null);
+    const thumbnailScrollRef = useRef<HTMLDivElement>(null);
 
-    // Responsive settings for thumbnails
     const responsiveOptions: GalleriaResponsiveOptions[] = [
-        {
-            breakpoint: '991px',
-            numVisible: 4
-        },
-        {
-            breakpoint: '767px',
-            numVisible: 3
-        },
-        {
-            breakpoint: '575px',
-            numVisible: 1
-        }
+        { breakpoint: '1024px', numVisible: 5 },
+        { breakpoint: '768px', numVisible: 3 },
+        { breakpoint: '560px', numVisible: 1 }
     ];
 
-    // Initialize Items
+    // Scroll active thumbnail into view
     useEffect(() => {
-        if (items && items.length > 0) {
-            setLocalItems(items);
-            setActiveIndex(0);
-        } else if (docId) {
-            setLocalItems([{
-                id: docId,
-                title: `Document ${docId}`,
-                type: 'image',
-                thumbnail: undefined
-            }]);
-            setActiveIndex(0);
-        } else {
-            setLocalItems([]);
+        if (thumbnailScrollRef.current) {
+            const activeThumb = thumbnailScrollRef.current.children[activeIndex] as HTMLElement;
+            if (activeThumb) {
+                activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+            }
         }
-    }, [items, docId]);
+    }, [activeIndex]);
+
+    // Fetch initial asset list based on documentId
+    useEffect(() => {
+        const fetchItems = async () => {
+            setIsItemsLoading(true);
+            try {
+                const items = await onFetchItems(documentId);
+                setLocalItems(items);
+                setActiveIndex(0);
+            } catch (error) {
+                console.error("Failed to fetch gallery items", error);
+                setLocalItems([]);
+            } finally {
+                setIsItemsLoading(false);
+            }
+        };
+        fetchItems();
+    }, [documentId, onFetchItems]);
 
     const activeItem = localItems[activeIndex];
 
-    // Fetch Content when Active Index changes
+    // Fetch Content & Handle Metadata when active item changes
     useEffect(() => {
         let isMounted = true;
 
@@ -95,25 +92,30 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
             if (!activeItem) return;
 
             setIsLoading(true);
-            // Reset view transforms on change
             setZoom(1);
             setRotation(0);
             setContentData(null);
-            setMetaData([]);
+            
+            if (propMetadata) {
+                setMetaData(propMetadata);
+            } else {
+                setMetaData([]);
+            }
 
             try {
-                // Parallel fetch
-                const [content, details] = await Promise.all([
+                const [content, fetchedDetails] = await Promise.all([
                     onFetchContent(activeItem.id),
-                    onFetchMetadata(activeItem.id)
+                    propMetadata ? Promise.resolve(null) : onFetchMetadata(activeItem.id)
                 ]);
 
                 if (isMounted) {
                     setContentData(content);
-                    setMetaData(details);
+                    if (fetchedDetails) {
+                        setMetaData(fetchedDetails);
+                    }
                 }
             } catch (error) {
-                console.error("Failed to load gallery item data", error);
+                console.error("Failed to load secure content", error);
             } finally {
                 if (isMounted) setIsLoading(false);
             }
@@ -122,18 +124,24 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         loadData();
 
         return () => { isMounted = false; };
-    }, [activeItem, onFetchContent, onFetchMetadata]);
+    }, [activeItem, onFetchContent, onFetchMetadata, propMetadata]);
 
-    // --- Toolbar Handlers ---
-    const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.5, 5));
-    const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.5, 0.5));
+    const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 4));
+    const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.25));
     const handleRotateCw = () => setRotation((prev) => prev + 90);
     const handleRotateCcw = () => setRotation((prev) => prev - 90);
     const handleFitScreen = () => { setZoom(1); setRotation(0); };
 
+    const handlePrev = () => {
+        setActiveIndex(prev => (prev === 0 ? localItems.length - 1 : prev - 1));
+    };
+
+    const handleNext = () => {
+        setActiveIndex(prev => (prev === localItems.length - 1 ? 0 : prev + 1));
+    };
+
     const handlePrint = () => {
         if (!contentData) return;
-        
         const printWindow = window.open('', '_blank');
         if (printWindow) {
             const isPdf = contentData.mimeType === 'application/pdf';
@@ -143,8 +151,8 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
             printWindow.document.write(`
                 <html>
-                    <head><title>Print ${activeItem?.title}</title></head>
-                    <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh;">
+                    <head><title>Asset Preview</title></head>
+                    <body style="margin:0; background:#000; height:100vh; display:flex; justify-content:center; align-items:center;">
                         ${contentHtml}
                         ${!isPdf ? '<script>window.onload = () => { window.print(); window.close(); }</script>' : ''}
                     </body>
@@ -159,67 +167,58 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         const link = document.createElement('a');
         link.href = `data:${contentData.mimeType};base64,${contentData.base64}`;
         const ext = contentData.mimeType.split('/')[1];
-        link.download = `${activeItem.title}.${ext}`;
+        link.download = `asset_${activeItem.id}.${ext}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    // --- Templates ---
-
     const itemTemplate = (item: GalleryItem) => {
-        // We only render the heavy content if this item is the currently active one
-        // and data is loaded. Otherwise, we show a loading state or placeholder.
         const isActive = item.id === activeItem?.id;
 
         if (!isActive || isLoading) {
             return (
-                <div className="flex flex-column align-items-center justify-content-center h-full w-full bg-black-alpha-90" style={{ minHeight: '400px' }}>
-                    <ProgressSpinner style={{width: '50px', height: '50px'}} strokeWidth="4" />
-                    <span className="text-white mt-3">Loading Secure Content...</span>
+                <div className="flex flex-column align-items-center justify-content-center h-full w-full bg-black-alpha-90">
+                    <ProgressSpinner style={{width: '40px', height: '40px'}} strokeWidth="3" />
+                    <span className="text-white-alpha-70 text-xs mt-3 font-medium uppercase tracking-widest">Handshake...</span>
                 </div>
             );
         }
 
         if (!contentData) {
             return (
-                <div className="flex align-items-center justify-content-center h-full w-full bg-black-alpha-90 text-white">
-                    <i className="pi pi-exclamation-triangle mr-2"></i> Content Unavailable
+                <div className="flex align-items-center justify-content-center h-full w-full bg-black-alpha-90 text-white-alpha-40">
+                    <i className="pi pi-lock mr-2 text-xl"></i> Secure Access Only
                 </div>
             );
         }
 
         if (contentData.mimeType === 'application/pdf') {
             return (
-                <div className="w-full h-full flex align-items-center justify-content-center bg-black-alpha-90" style={{ minHeight: '500px' }}>
+                <div className="w-full h-full flex align-items-center justify-content-center bg-black-alpha-90 p-2 overflow-hidden">
                      <iframe
-                        src={`data:application/pdf;base64,${contentData.base64}`}
-                        className="w-full h-full border-none"
-                        style={{ height: '600px' }} // Fixed height for PDF in galleria
-                        title="PDF Viewer"
+                        src={`data:application/pdf;base64,${contentData.base64}#toolbar=0`}
+                        className="w-full h-full border-none shadow-8 border-round-sm"
+                        style={{ maxWidth: '1000px' }}
+                        title="Document Viewer"
                     />
                 </div>
             );
         }
 
-        // Image Handling with Transformations
-        // Note: Galleria items usually have fixed bounds. We use overflow-hidden on container usually,
-        // but for zoom we might want overflow-auto. However, Galleria swipe logic might conflict.
-        // We apply transforms to the img directly.
         return (
-            <div className="w-full h-full flex align-items-center justify-content-center bg-black-alpha-90 overflow-hidden" style={{ minHeight: '500px' }}>
-                <div className="overflow-auto w-full h-full flex align-items-center justify-content-center">
+            <div className="w-full h-full flex align-items-center justify-content-center bg-black-alpha-90 overflow-hidden relative">
+                <div className="w-full h-full flex align-items-center justify-content-center p-3 overflow-auto custom-scrollbar">
                     <img 
                         src={`data:${contentData.mimeType};base64,${contentData.base64}`} 
-                        alt={item.title} 
+                        alt="" 
+                        className="shadow-8 border-round-sm transition-transform transition-duration-300"
                         style={{ 
-                            width: zoom === 1 ? '100%' : `${zoom * 100}%`,
-                            height: zoom === 1 ? '100%' : 'auto',
-                            objectFit: 'contain',
-                            transform: `rotate(${rotation}deg)`,
-                            maxWidth: zoom === 1 ? '100%' : 'none',
+                            width: zoom === 1 ? 'auto' : `${zoom * 100}%`,
                             maxHeight: zoom === 1 ? '100%' : 'none',
-                            transition: 'transform 0.3s ease'
+                            maxWidth: zoom === 1 ? '100%' : 'none',
+                            objectFit: 'contain',
+                            transform: `rotate(${rotation}deg)`
                         }} 
                     />
                 </div>
@@ -227,133 +226,261 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         );
     };
 
-    const thumbnailTemplate = (item: GalleryItem) => {
-        return (
-            <div className="flex align-items-center justify-content-center h-5rem w-5rem overflow-hidden border-1 border-transparent hover:border-primary transition-colors">
-                {item.thumbnail ? (
-                    <img src={item.thumbnail} alt={item.title} className="h-full w-full object-cover" />
-                ) : (
-                    <div className="flex flex-column align-items-center justify-content-center bg-surface-100 w-full h-full text-600">
-                        <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image'} text-xl mb-1`}></i>
-                        <span className="text-xs">{item.type.toUpperCase()}</span>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    // Header containing the Toolbar
     const header = (
-        <div className="flex flex-wrap align-items-center justify-content-between p-3 surface-card border-bottom-1 border-300 gap-3">
-            <div className="font-bold text-lg text-900 white-space-nowrap overflow-hidden text-overflow-ellipsis" style={{ maxWidth: '200px' }}>
-                {activeItem?.title}
+        <div className="flex flex-wrap align-items-center justify-content-between px-3 py-1 surface-card border-bottom-1 border-300 z-5 shadow-1 gap-3">
+            <Tooltip target=".toolbar-btn" position="bottom" />
+            
+            {/* Zoom Controls Aligned Left */}
+            <div className="flex align-items-center bg-surface-100 border-1 border-300 border-round-lg shadow-sm overflow-hidden h-2rem">
+                <Button 
+                    icon="pi pi-minus" 
+                    onClick={handleZoomOut} 
+                    size="small" 
+                    text 
+                    severity="secondary" 
+                    className="p-1 h-full w-2rem toolbar-btn" 
+                    tooltip="Zoom Out" 
+                />
+                <span className="px-3 text-xs font-bold text-700 border-x-1 border-200 select-none min-w-4rem text-center bg-surface-0 h-full flex align-items-center justify-content-center">
+                    {Math.round(zoom * 100)}%
+                </span>
+                <Button 
+                    icon="pi pi-plus" 
+                    onClick={handleZoomIn} 
+                    size="small" 
+                    text 
+                    severity="secondary" 
+                    className="p-1 h-full w-2rem toolbar-btn" 
+                    tooltip="Zoom In" 
+                />
+                <Button 
+                    icon="pi pi-expand" 
+                    onClick={handleFitScreen} 
+                    size="small" 
+                    text 
+                    severity="secondary" 
+                    className="p-1 h-full w-2rem border-left-1 border-200 toolbar-btn" 
+                    tooltip="Fit to Screen" 
+                />
             </div>
 
-            <div className="flex gap-3 align-items-center flex-wrap justify-content-end flex-1">
-                <Tooltip target=".toolbar-btn" />
-                
-                {/* Grouped Zoom Controls */}
-                <span className="p-buttonset shadow-1">
-                    <Button icon="pi pi-search-plus" onClick={handleZoomIn} size="small" severity="secondary" tooltip="Zoom In" />
-                    <Button icon="pi pi-search-minus" onClick={handleZoomOut} size="small" severity="secondary" tooltip="Zoom Out" />
-                    <Button icon="pi pi-arrows-alt" onClick={handleFitScreen} size="small" severity="secondary" tooltip="Fit Screen" />
-                </span>
-
-                {/* Transformations & Actions */}
-                <div className="flex gap-1">
-                    <Button icon="pi pi-refresh" className="toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{transform: 'scaleX(-1)'}} />
-                    <Button icon="pi pi-refresh" className="toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
-                    <Button icon="pi pi-print" className="toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
-                    <Button icon="pi pi-download" className="toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" />
+            {/* Other actions aligned right */}
+            <div className="flex gap-1 align-items-center">
+                <div className="flex gap-1 border-right-1 border-200 pr-2 hidden sm:flex">
+                    <Button icon="pi pi-undo" className="toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" />
+                    <Button icon="pi pi-redo" className="toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
                 </div>
 
-                {/* Toggle Metadata */}
-                <div className="flex align-items-center border-left-1 border-300 pl-3">
-                    <Checkbox 
-                        inputId="showDetails" 
-                        onChange={e => setShowInfo(!!e.checked)} 
-                        checked={showInfo} 
+                <div className="flex gap-1 pl-1">
+                    <Button icon="pi pi-print" className="toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
+                    <Button icon="pi pi-download" className="toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Export" />
+                    <Button 
+                        icon={`pi ${showInfo ? 'pi-info-circle text-primary' : 'pi-info-circle'}`} 
+                        className="toolbar-btn" 
+                        onClick={() => setShowInfo(!showInfo)} 
+                        rounded 
+                        text 
+                        severity="secondary" 
+                        tooltip={showInfo ? "Hide Properties" : "Show Properties"} 
                     />
-                    <label htmlFor="showDetails" className="ml-2 text-sm cursor-pointer select-none">Show Details</label>
                 </div>
             </div>
         </div>
     );
 
+    if (isItemsLoading) {
+        return (
+            <div className="flex flex-column align-items-center justify-content-center h-20rem surface-card border-round-xl border-1 border-300 gap-4">
+                <ProgressSpinner />
+                <span className="text-sm font-bold text-500 uppercase tracking-widest">Loading Secure Archives...</span>
+            </div>
+        );
+    }
+
     if (localItems.length === 0) {
-        return <div className="p-5 text-center text-500">No items available.</div>;
+        return <div className="p-8 text-center text-400 surface-card border-round-xl shadow-1 border-1 border-300 italic">No assets available for this record.</div>;
     }
 
     return (
-        <div className={`flex flex-column md:flex-row shadow-2 border-round overflow-hidden surface-card ${className}`} style={{ height: 'calc(100vh - 9rem)', ...style }}>
-            {/* Main Gallery Area */}
-            <div className={`flex-1 min-w-0 transition-all ${showInfo ? 'border-right-1 border-300' : ''}`}>
+        <div className={`flex flex-column md:flex-row shadow-6 border-round-xl overflow-hidden surface-card border-1 border-300 ${className}`} style={{ height: 'calc(100vh - 12rem)', ...style }}>
+            
+            {/* Left Vertical Rail (Controls + Thumbnails) */}
+            <div className="w-9rem flex-shrink-0 bg-black-alpha-95 border-right-1 border-white-alpha-10 flex flex-column overflow-hidden">
+                
+                {/* Horizontal Asset Navigation Controls (Top of Rail) */}
+                <div className="flex align-items-center justify-content-center gap-2 py-3 border-bottom-1 border-white-alpha-10 bg-black-alpha-90 shadow-2 z-3 px-2">
+                    <Button 
+                        icon="pi pi-chevron-left" 
+                        onClick={handlePrev} 
+                        size="small" 
+                        rounded 
+                        text 
+                        className="w-2rem h-2rem text-white-alpha-70 hover:bg-white-alpha-10" 
+                        tooltip="Previous Asset"
+                        tooltipOptions={{ position: 'right' }}
+                    />
+                    <div className="flex align-items-center text-white text-xs font-bold bg-white-alpha-10 px-2 py-1 border-round-sm">
+                        <span>{activeIndex + 1}</span>
+                        <span className="mx-1 text-white-alpha-40">/</span>
+                        <span className="text-white-alpha-40">{localItems.length}</span>
+                    </div>
+                    <Button 
+                        icon="pi pi-chevron-right" 
+                        onClick={handleNext} 
+                        size="small" 
+                        rounded 
+                        text 
+                        className="w-2rem h-2rem text-white-alpha-70 hover:bg-white-alpha-10" 
+                        tooltip="Next Asset"
+                        tooltipOptions={{ position: 'right' }}
+                    />
+                </div>
+
+                {/* Thumbnails Rail (Scrollable) */}
+                <div className="flex-1 overflow-y-auto no-scrollbar py-2" ref={thumbnailScrollRef}>
+                    {localItems.map((item, index) => (
+                        <div 
+                            key={item.id} 
+                            onClick={() => setActiveIndex(index)}
+                            className={`flex-shrink-0 cursor-pointer border-round overflow-hidden transition-all mx-3 mb-2 border-2 ${index === activeIndex ? 'border-primary' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                            style={{ height: '4rem' }}
+                        >
+                            {item.thumbnail ? (
+                                <img src={item.thumbnail} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex align-items-center justify-content-center bg-white-alpha-10">
+                                    <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image'} text-xs`}></i>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Viewer Stage */}
+            <div className="flex-1 min-w-0 flex flex-column bg-black-alpha-90 relative overflow-hidden h-full">
                 <Galleria 
                     ref={galleriaRef}
                     value={localItems} 
                     activeIndex={activeIndex} 
                     onItemChange={(e) => setActiveIndex(e.index)}
                     responsiveOptions={responsiveOptions} 
-                    numVisible={5} 
-                    style={{ maxWidth: '100%' }}
-                    className="h-full flex flex-column"
-                    
-                    // Render custom header for toolbar
+                    numVisible={0} 
+                    className="h-full flex flex-column pro-galleria-v4"
                     header={header}
-                    
-                    // Main Content
                     item={itemTemplate}
-                    
-                    // Thumbnails (Bottom strip)
-                    thumbnail={thumbnailTemplate}
-                    showThumbnails={localItems.length > 1}
-                    showItemNavigators={localItems.length > 1}
-                    showItemNavigatorsOnHover
+                    showThumbnails={false} 
+                    showItemNavigators={false} 
                     circular
+                    autoPlay={false}
                 />
             </div>
 
-            {/* Metadata Sidebar */}
+            {/* Property Sidebar */}
             {showInfo && (
-                <div className="w-full md:w-20rem flex-shrink-0 flex flex-column bg-surface-50 transition-all">
-                    <div className="p-3 border-bottom-1 border-200 bg-surface-0">
-                        <div className="flex justify-content-between align-items-center mb-2">
-                            <span className="font-bold text-800">Metadata</span>
-                            <Button icon="pi pi-times" onClick={() => setShowInfo(false)} rounded text severity="secondary" size="small" aria-label="Close" />
+                <div className="w-full md:w-22rem flex-shrink-0 flex flex-column bg-surface-0 border-left-1 border-200 shadow-left-2 transition-all">
+                    <div className="p-4 border-bottom-1 border-100 surface-50">
+                        <div className="flex justify-between align-items-center mb-4">
+                            <span className="text-xs font-bold text-700 uppercase tracking-widest">Metadata Registry</span>
+                            <Button icon="pi pi-times" onClick={() => setShowInfo(false)} rounded text severity="secondary" size="small" />
                         </div>
                         <span className="p-input-icon-left w-full">
                             <i className="pi pi-search text-400" />
                             <InputText 
                                 value={metaFilter} 
                                 onChange={(e) => setMetaFilter(e.target.value)} 
-                                placeholder="Filter properties..." 
-                                className="w-full p-inputtext-sm" 
+                                placeholder="Search attributes..." 
+                                className="w-full p-inputtext-sm border-round-lg shadow-sm" 
                             />
                         </span>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto custom-scrollbar p-0">
+                    <div className="flex-1 overflow-y-auto bg-surface-0">
                          {isLoading ? (
-                            <div className="flex align-items-center justify-content-center h-10rem">
-                                <ProgressSpinner style={{width: '30px', height: '30px'}} />
+                            <div className="flex flex-column align-items-center justify-content-center h-12rem gap-3">
+                                <ProgressSpinner style={{width: '24px', height: '24px'}} strokeWidth="4" />
+                                <span className="text-xs text-400 font-bold uppercase tracking-tight text-center">Syncing...</span>
                             </div>
                         ) : (
                             <DataTable 
                                 value={metaData} 
                                 stripedRows 
                                 size="small" 
-                                className="text-sm border-none"
+                                className="text-xs p-datatable-sm"
                                 globalFilter={metaFilter}
                                 globalFilterFields={['property', 'value']}
-                                emptyMessage="No metadata."
+                                emptyMessage="Registry empty."
+                                rowClassName={() => 'border-bottom-1 border-50'}
                             >
-                                <Column field="property" header="Property" className="font-semibold text-600 w-6rem"></Column>
-                                <Column field="value" header="Value"></Column>
+                                <Column field="property" header="Property" className="font-bold text-700 w-8rem py-3 px-4 surface-50"></Column>
+                                <Column field="value" header="Value" className="text-600 py-3 px-4"></Column>
                             </DataTable>
                         )}
                     </div>
                 </div>
             )}
+
+            <style>{`
+                .no-scrollbar::-webkit-scrollbar {
+                    display: none;
+                }
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+
+                .pro-galleria-v4.p-galleria {
+                    height: 100%;
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .pro-galleria-v4 .p-galleria-content {
+                    height: 100%;
+                    width: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1;
+                    min-height: 0;
+                }
+
+                .pro-galleria-v4 .p-galleria-item-wrapper {
+                    flex: 1;
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .pro-galleria-v4 .p-galleria-item-container {
+                    flex: 1;
+                    min-height: 0;
+                }
+
+                .pro-galleria-v4 .p-galleria-item {
+                    height: 100%;
+                    width: 100%;
+                }
+
+                .shadow-left-2 {
+                    box-shadow: -8px 0 24px rgba(0,0,0,0.03);
+                }
+
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 8px;
+                    height: 8px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
+            `}</style>
         </div>
     );
 };

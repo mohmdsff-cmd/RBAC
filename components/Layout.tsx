@@ -26,9 +26,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const handleLogout = () => {
-    // In a "No Login Page" scenario (SSO), "Logout" typically involves 
-    // killing the local session and reloading/redirecting to the IDP.
-    // For this simulation, we reload the app to re-trigger the "fetchUserProfile" check.
     dispatch(logout());
     window.location.reload(); 
   };
@@ -52,23 +49,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         }
     },
     { separator: true },
-    {
-        label: 'My Profile',
-        icon: 'pi pi-user',
-        command: () => navigate('/help') // directing to help/profile area
-    },
-    {
-        label: 'Settings',
-        icon: 'pi pi-cog',
-        command: () => setShowSettings(true)
-    },
+    { label: 'My Profile', icon: 'pi pi-user', command: () => navigate('/help') },
+    { label: 'Settings', icon: 'pi pi-cog', command: () => setShowSettings(true) },
     { separator: true },
-    {
-        label: 'Logout',
-        icon: 'pi pi-power-off',
-        className: 'text-red-500',
-        command: handleLogout
-    }
+    { label: 'Logout', icon: 'pi pi-power-off', className: 'text-red-500', command: handleLogout }
   ];
 
   // Mega Menu Model
@@ -82,7 +66,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         label: 'Workplace',
         icon: 'pi pi-briefcase',
         visible: !!user,
-        className: 'submenu-align-left', // Align Left: Expands to the right
+        className: 'submenu-align-left',
         items: [
             [
                 {
@@ -91,23 +75,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         { label: 'Dashboard', icon: 'pi pi-chart-bar', command: () => navigate('/dashboard') },
                         { label: 'Search Records', icon: 'pi pi-search', command: () => navigate('/search') },
                         { label: 'Active Cases', icon: 'pi pi-list', command: () => navigate('/active-cases') },
-                        { label: 'Help', icon: 'pi pi-question-circle', command: () => navigate('/help') },
-                        { label: 'My Profile', icon: 'pi pi-user' },
-                        { label: 'Settings', icon: 'pi pi-cog', command: () => setShowSettings(true) }
+                        { label: 'Help', icon: 'pi pi-question-circle', command: () => navigate('/help') }
                     ]
                 },
                 {
                     label: 'Content',
                     items: [
+                        { label: 'Gallery', icon: 'pi pi-images', command: () => navigate('/gallery') },
                         { 
-                            label: 'Gallery', 
-                            icon: 'pi pi-images', 
-                            command: () => navigate('/gallery') 
-                        },
-                        { 
-                            label: 'Documents', 
-                            icon: 'pi pi-file',
-                            visible: hasRole([UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS])
+                            label: 'Redaction Tool', 
+                            icon: 'pi pi-shield',
+                            command: () => navigate('/redact'),
+                            visible: hasRole([UserRole.ADMIN, UserRole.VIEW_DOCUMENTS])
                         },
                         { 
                           label: 'Daily Reports', 
@@ -136,43 +115,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         ]
     },
     {
-        label: 'Sports',
-        icon: 'pi pi-clock',
-        visible: !!user,
-        className: 'submenu-align-center', // Align Center: Expands both ways
-        items: [
-            [
-                {
-                    label: 'Football',
-                    items: [{ label: 'Kits' }, { label: 'Shoes' }, { label: 'Shorts' }, { label: 'Training' }]
-                }
-            ],
-            [
-                {
-                    label: 'Running',
-                    items: [{ label: 'Accessories' }, { label: 'Shoes' }, { label: 'T-Shirts' }, { label: 'Shorts' }]
-                }
-            ],
-            [
-                {
-                    label: 'Swimming',
-                    items: [{ label: 'Kickboard' }, { label: 'Nose Clip' }, { label: 'Swimsuits' }, { label: 'Paddles' }]
-                }
-            ],
-            [
-                {
-                    label: 'Tennis',
-                    items: [{ label: 'Balls' }, { label: 'Rackets' }, { label: 'Shoes' }, { label: 'Training' }]
-                }
-            ]
-        ]
-    },
-    {
         label: 'Administration',
         icon: 'pi pi-shield',
-        // Visible if Admin OR has specific view permissions for sub-items
         visible: hasRole([UserRole.ADMIN, UserRole.VIEW_SYSTEM]),
-        // Align Right: Expands to the left to prevent overflow
         className: 'font-bold text-red-500 submenu-align-right',
         items: [
             [
@@ -186,7 +131,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 },
                 {
                     label: 'System',
-                    // Visible if Admin OR View System
                     visible: hasRole([UserRole.ADMIN, UserRole.VIEW_SYSTEM]),
                     items: [
                         { label: 'Logs', icon: 'pi pi-list' },
@@ -202,13 +146,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const end = user ? (
     <div className="flex align-items-center gap-3">
-        <div className="flex flex-column align-items-end hidden md:flex">
-             <span className="font-semibold text-700 text-sm">Welcome back</span>
-        </div>
-        
         <Menu model={userMenuItems} popup ref={userMenu} id="popup_menu_left" />
-        
-        <div className="relative cursor-pointer" onClick={(event) => userMenu.current?.toggle(event)} aria-controls="popup_menu_left" aria-haspopup>
+        <div className="relative cursor-pointer" onClick={(event) => userMenu.current?.toggle(event)}>
             <Avatar 
                 image={user.avatarUrl} 
                 icon={!user.avatarUrl ? 'pi pi-user' : undefined}

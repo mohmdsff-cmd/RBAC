@@ -14,6 +14,7 @@ import Search from './pages/Search';
 import ActiveCases from './pages/ActiveCases';
 import Help from './pages/Help';
 import Unauthorized from './pages/Unauthorized';
+import PdfRedactionPage from './pages/PdfRedactionPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -58,6 +59,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS]}>
                 <Gallery />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: PDF Redaction (New) */}
+          <Route 
+            path="/redact" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEW_DOCUMENTS]}>
+                <PdfRedactionPage />
               </ProtectedRoute>
             } 
           />
