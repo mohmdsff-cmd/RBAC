@@ -7,12 +7,13 @@ import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Galleria, GalleriaResponsiveOptions } from 'primereact/galleria';
+import { Checkbox } from 'primereact/checkbox';
 import { mockFetchContent, mockFetchMetadata, mockFetchGalleryItems, GalleryItem, GalleryMetadataItem } from '../services/mockApi';
 
 export interface GalleryViewerProps {
     documentId: string | number;
     metadata?: GalleryMetadataItem[];
-    showMetadataInitial?: boolean;
+    showInfo?: boolean; // Renamed from showMetadataInitial
     onFetchItems?: (id: string | number) => Promise<GalleryItem[]>;
     onFetchContent?: (id: string | number) => Promise<{ base64: string; mimeType: string }>;
     onFetchMetadata?: (id: string | number) => Promise<GalleryMetadataItem[]>;
@@ -23,7 +24,7 @@ export interface GalleryViewerProps {
 export const GalleryViewer: React.FC<GalleryViewerProps> = ({ 
     documentId,
     metadata: propMetadata,
-    showMetadataInitial = false,
+    showInfo = true,
     onFetchItems = mockFetchGalleryItems,
     onFetchContent = mockFetchContent,
     onFetchMetadata = mockFetchMetadata,
@@ -36,7 +37,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     // View State
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
-    const [showInfo, setShowInfo] = useState(showMetadataInitial);
+    const [showInfoPanel, setShowInfoPanel] = useState(showInfo);
     const [metaFilter, setMetaFilter] = useState('');
     
     // Data Loading State
@@ -54,12 +55,17 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         { breakpoint: '560px', numVisible: 1 }
     ];
 
+    // Update internal state if prop changes
+    useEffect(() => {
+        setShowInfoPanel(showInfo);
+    }, [showInfo]);
+
     // Scroll active thumbnail into view
     useEffect(() => {
         if (thumbnailScrollRef.current) {
             const activeThumb = thumbnailScrollRef.current.children[activeIndex] as HTMLElement;
             if (activeThumb) {
-                activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
         }
     }, [activeIndex]);
@@ -152,7 +158,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
             printWindow.document.write(`
                 <html>
                     <head><title>Asset Preview</title></head>
-                    <body style="margin:0; background:#000; height:100vh; display:flex; justify-content:center; align-items:center;">
+                    <body style="margin:0; background:#fff; height:100vh; display:flex; justify-content:center; align-items:center;">
                         ${contentHtml}
                         ${!isPdf ? '<script>window.onload = () => { window.print(); window.close(); }</script>' : ''}
                     </body>
@@ -178,16 +184,16 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
         if (!isActive || isLoading) {
             return (
-                <div className="flex flex-column align-items-center justify-content-center h-full w-full bg-black-alpha-90">
+                <div className="flex flex-column align-items-center justify-content-center h-full w-full bg-surface-0">
                     <ProgressSpinner style={{width: '40px', height: '40px'}} strokeWidth="3" />
-                    <span className="text-white-alpha-70 text-xs mt-3 font-medium uppercase tracking-widest">Handshake...</span>
+                    <span className="text-400 text-xs mt-3 font-medium uppercase tracking-widest">Handshake...</span>
                 </div>
             );
         }
 
         if (!contentData) {
             return (
-                <div className="flex align-items-center justify-content-center h-full w-full bg-black-alpha-90 text-white-alpha-40">
+                <div className="flex align-items-center justify-content-center h-full w-full bg-surface-50 text-400">
                     <i className="pi pi-lock mr-2 text-xl"></i> Secure Access Only
                 </div>
             );
@@ -195,11 +201,11 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
         if (contentData.mimeType === 'application/pdf') {
             return (
-                <div className="w-full h-full flex align-items-center justify-content-center bg-black-alpha-90 p-2 overflow-hidden">
+                <div className="w-full h-full flex align-items-center justify-content-center bg-surface-100 p-2 overflow-hidden">
                      <iframe
                         src={`data:application/pdf;base64,${contentData.base64}#toolbar=0`}
-                        className="w-full h-full border-none shadow-8 border-round-sm"
-                        style={{ maxWidth: '1000px' }}
+                        className="w-full h-full border-none shadow-5 border-round-sm"
+                        style={{ maxWidth: '1000px', backgroundColor: '#fff' }}
                         title="Document Viewer"
                     />
                 </div>
@@ -207,18 +213,22 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         }
 
         return (
-            <div className="w-full h-full flex align-items-center justify-content-center bg-black-alpha-90 overflow-hidden relative">
-                <div className="w-full h-full flex align-items-center justify-content-center p-3 overflow-auto custom-scrollbar">
+            <div className="w-full h-full bg-surface-0 overflow-auto custom-scrollbar p-3 flex align-items-start justify-content-start">
+                <div className="m-auto flex align-items-center justify-content-center transition-all transition-duration-300" 
+                     style={{ 
+                        minWidth: '100%', 
+                        minHeight: '100%',
+                        transform: `rotate(${rotation}deg)` 
+                     }}>
                     <img 
                         src={`data:${contentData.mimeType};base64,${contentData.base64}`} 
                         alt="" 
-                        className="shadow-8 border-round-sm transition-transform transition-duration-300"
+                        className="shadow-5 border-round-sm"
                         style={{ 
                             width: zoom === 1 ? 'auto' : `${zoom * 100}%`,
-                            maxHeight: zoom === 1 ? '100%' : 'none',
                             maxWidth: zoom === 1 ? '100%' : 'none',
-                            objectFit: 'contain',
-                            transform: `rotate(${rotation}deg)`
+                            maxHeight: zoom === 1 ? '100%' : 'none',
+                            objectFit: 'contain'
                         }} 
                     />
                 </div>
@@ -227,62 +237,61 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     };
 
     const header = (
-        <div className="flex flex-wrap align-items-center justify-content-between px-3 py-1 surface-card border-bottom-1 border-300 z-5 shadow-1 gap-3">
+        <div className="flex flex-wrap align-items-center justify-content-between px-3 py-2 surface-card border-bottom-1 border-200 z-5 shadow-1 gap-2">
             <Tooltip target=".toolbar-btn" position="bottom" />
             
-            {/* Zoom Controls Aligned Left */}
-            <div className="flex align-items-center bg-surface-100 border-1 border-300 border-round-lg shadow-sm overflow-hidden h-2rem">
-                <Button 
-                    icon="pi pi-minus" 
-                    onClick={handleZoomOut} 
-                    size="small" 
-                    text 
-                    severity="secondary" 
-                    className="p-1 h-full w-2rem toolbar-btn" 
-                    tooltip="Zoom Out" 
-                />
-                <span className="px-3 text-xs font-bold text-700 border-x-1 border-200 select-none min-w-4rem text-center bg-surface-0 h-full flex align-items-center justify-content-center">
-                    {Math.round(zoom * 100)}%
-                </span>
-                <Button 
-                    icon="pi pi-plus" 
-                    onClick={handleZoomIn} 
-                    size="small" 
-                    text 
-                    severity="secondary" 
-                    className="p-1 h-full w-2rem toolbar-btn" 
-                    tooltip="Zoom In" 
-                />
-                <Button 
-                    icon="pi pi-expand" 
-                    onClick={handleFitScreen} 
-                    size="small" 
-                    text 
-                    severity="secondary" 
-                    className="p-1 h-full w-2rem border-left-1 border-200 toolbar-btn" 
-                    tooltip="Fit to Screen" 
-                />
+            <div className="flex flex-wrap gap-2 align-items-center">
+                {/* Zoom Controls */}
+                <div className="flex align-items-center bg-surface-50 border-1 border-200 border-round-lg shadow-sm overflow-hidden h-2rem">
+                    <Button 
+                        icon="pi pi-minus" 
+                        onClick={handleZoomOut} 
+                        size="small" 
+                        text 
+                        severity="secondary" 
+                        className="p-1 h-full w-2rem toolbar-btn" 
+                        tooltip="Zoom Out" 
+                    />
+                    <span className="px-2 md:px-3 text-xs font-bold text-700 border-x-1 border-200 select-none min-w-3rem md:min-w-4rem text-center bg-surface-0 h-full flex align-items-center justify-content-center">
+                        {Math.round(zoom * 100)}%
+                    </span>
+                    <Button 
+                        icon="pi pi-plus" 
+                        onClick={handleZoomIn} 
+                        size="small" 
+                        text 
+                        severity="secondary" 
+                        className="p-1 h-full w-2rem toolbar-btn" 
+                        tooltip="Zoom In" 
+                    />
+                    <Button 
+                        icon="pi pi-expand" 
+                        onClick={handleFitScreen} 
+                        size="small" 
+                        text 
+                        severity="secondary" 
+                        className="p-1 h-full w-2rem border-left-1 border-200 toolbar-btn" 
+                        tooltip="Fit to Screen" 
+                    />
+                </div>
+
+                {/* Metadata Checkbox Toggle */}
+                <div className="flex align-items-center ml-2 mr-3 px-3 py-1 bg-surface-50 border-1 border-200 border-round-lg h-2rem">
+                    <Checkbox inputId="cb_metadata" onChange={e => setShowInfoPanel(e.checked || false)} checked={showInfoPanel}></Checkbox>
+                    <label htmlFor="cb_metadata" className="ml-2 text-xs font-bold text-700 cursor-pointer select-none">Metadata</label>
+                </div>
             </div>
 
-            {/* Other actions aligned right */}
+            {/* Other actions */}
             <div className="flex gap-1 align-items-center">
-                <div className="flex gap-1 border-right-1 border-200 pr-2 hidden sm:flex">
+                <div className="flex gap-1 border-right-1 border-200 pr-2 hidden md:flex">
                     <Button icon="pi pi-undo" className="toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" />
                     <Button icon="pi pi-redo" className="toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
                 </div>
 
-                <div className="flex gap-1 pl-1">
+                <div className="flex gap-1">
                     <Button icon="pi pi-print" className="toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
                     <Button icon="pi pi-download" className="toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Export" />
-                    <Button 
-                        icon={`pi ${showInfo ? 'pi-info-circle text-primary' : 'pi-info-circle'}`} 
-                        className="toolbar-btn" 
-                        onClick={() => setShowInfo(!showInfo)} 
-                        rounded 
-                        text 
-                        severity="secondary" 
-                        tooltip={showInfo ? "Hide Properties" : "Show Properties"} 
-                    />
                 </div>
             </div>
         </div>
@@ -290,39 +299,38 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
     if (isItemsLoading) {
         return (
-            <div className="flex flex-column align-items-center justify-content-center h-20rem surface-card border-round-xl border-1 border-300 gap-4">
+            <div className="flex flex-column align-items-center justify-content-center h-20rem surface-card border-round-xl border-1 border-200 gap-4">
                 <ProgressSpinner />
-                <span className="text-sm font-bold text-500 uppercase tracking-widest">Loading Secure Archives...</span>
+                <span className="text-sm font-bold text-400 uppercase tracking-widest">Loading Secure Archives...</span>
             </div>
         );
     }
 
     if (localItems.length === 0) {
-        return <div className="p-8 text-center text-400 surface-card border-round-xl shadow-1 border-1 border-300 italic">No assets available for this record.</div>;
+        return <div className="p-8 text-center text-400 surface-card border-round-xl shadow-1 border-1 border-200 italic">No assets available for this record.</div>;
     }
 
     return (
-        <div className={`flex flex-column md:flex-row shadow-6 border-round-xl overflow-hidden surface-card border-1 border-300 ${className}`} style={{ height: 'calc(100vh - 12rem)', ...style }}>
+        <div className={`flex flex-column md:flex-row shadow-6 border-round-xl overflow-hidden surface-card border-1 border-200 ${className}`} style={{ minHeight: '500px', height: 'auto', maxHeight: 'calc(100vh - 12rem)', ...style }}>
             
-            {/* Left Vertical Rail (Controls + Thumbnails) */}
-            <div className="w-9rem flex-shrink-0 bg-black-alpha-95 border-right-1 border-white-alpha-10 flex flex-column overflow-hidden">
+            {/* Asset Rail (Thumbnails Column on Left) */}
+            <div className="w-full md:w-7rem lg:w-9rem flex-shrink-0 bg-surface-50 border-bottom-1 md:border-bottom-none md:border-right-1 border-200 flex flex-row md:flex-column overflow-hidden">
                 
-                {/* Horizontal Asset Navigation Controls (Top of Rail) */}
-                <div className="flex align-items-center justify-content-center gap-2 py-3 border-bottom-1 border-white-alpha-10 bg-black-alpha-90 shadow-2 z-3 px-2">
+                {/* Thumbnail Navigation Controls */}
+                <div className="flex md:flex-column align-items-center justify-content-center gap-2 py-2 md:py-3 border-right-1 md:border-right-none md:border-bottom-1 border-200 bg-surface-0 shadow-sm z-3 px-3">
                     <Button 
                         icon="pi pi-chevron-left" 
                         onClick={handlePrev} 
                         size="small" 
                         rounded 
                         text 
-                        className="w-2rem h-2rem text-white-alpha-70 hover:bg-white-alpha-10" 
-                        tooltip="Previous Asset"
-                        tooltipOptions={{ position: 'right' }}
+                        className="w-2rem h-2rem text-700 hover:bg-surface-100" 
+                        tooltip="Previous"
                     />
-                    <div className="flex align-items-center text-white text-xs font-bold bg-white-alpha-10 px-2 py-1 border-round-sm">
+                    <div className="flex align-items-center text-900 text-xs font-bold bg-surface-0 border-1 border-200 px-2 py-1 border-round-sm mx-1">
                         <span>{activeIndex + 1}</span>
-                        <span className="mx-1 text-white-alpha-40">/</span>
-                        <span className="text-white-alpha-40">{localItems.length}</span>
+                        <span className="mx-1 text-400">/</span>
+                        <span className="text-400">{localItems.length}</span>
                     </div>
                     <Button 
                         icon="pi pi-chevron-right" 
@@ -330,26 +338,25 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                         size="small" 
                         rounded 
                         text 
-                        className="w-2rem h-2rem text-white-alpha-70 hover:bg-white-alpha-10" 
-                        tooltip="Next Asset"
-                        tooltipOptions={{ position: 'right' }}
+                        className="w-2rem h-2rem text-700 hover:bg-surface-100" 
+                        tooltip="Next"
                     />
                 </div>
 
-                {/* Thumbnails Rail (Scrollable) */}
-                <div className="flex-1 overflow-y-auto no-scrollbar py-2" ref={thumbnailScrollRef}>
+                {/* Thumbnails Strip (Scrollable) */}
+                <div className="flex-1 overflow-x-auto md:overflow-y-auto no-scrollbar py-2 px-2 md:px-0 flex flex-row md:flex-column align-items-center" ref={thumbnailScrollRef}>
                     {localItems.map((item, index) => (
                         <div 
                             key={item.id} 
                             onClick={() => setActiveIndex(index)}
-                            className={`flex-shrink-0 cursor-pointer border-round overflow-hidden transition-all mx-3 mb-2 border-2 ${index === activeIndex ? 'border-primary' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                            className={`flex-shrink-0 cursor-pointer border-round overflow-hidden transition-all mx-1 md:mx-0 md:my-2 border-2 w-4rem md:w-5rem lg:w-6rem shadow-sm ${index === activeIndex ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}
                             style={{ height: '4rem' }}
                         >
                             {item.thumbnail ? (
                                 <img src={item.thumbnail} alt="" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex align-items-center justify-content-center bg-white-alpha-10">
-                                    <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image'} text-xs`}></i>
+                                <div className="w-full h-full flex align-items-center justify-content-center bg-surface-200">
+                                    <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image'} text-sm`}></i>
                                 </div>
                             )}
                         </div>
@@ -357,8 +364,8 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 </div>
             </div>
 
-            {/* Viewer Stage */}
-            <div className="flex-1 min-w-0 flex flex-column bg-black-alpha-90 relative overflow-hidden h-full">
+            {/* Viewer Stage (Image in Middle) */}
+            <div className="flex-1 min-w-0 flex flex-column bg-surface-0 relative overflow-hidden h-25rem md:h-full">
                 <Galleria 
                     ref={galleriaRef}
                     value={localItems} 
@@ -376,26 +383,26 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 />
             </div>
 
-            {/* Property Sidebar */}
-            {showInfo && (
-                <div className="w-full md:w-22rem flex-shrink-0 flex flex-column bg-surface-0 border-left-1 border-200 shadow-left-2 transition-all">
-                    <div className="p-4 border-bottom-1 border-100 surface-50">
-                        <div className="flex justify-between align-items-center mb-4">
+            {/* Property Sidebar (Metadata Column on Right) */}
+            {showInfoPanel && (
+                <div className="w-full md:w-18rem lg:w-22rem flex-shrink-0 flex flex-column bg-surface-0 border-top-1 md:border-top-none md:border-left-1 border-200 shadow-left-1 transition-all">
+                    <div className="p-3 lg:p-4 border-bottom-1 border-100 bg-surface-50">
+                        <div className="flex justify-content-between align-items-center mb-3">
                             <span className="text-xs font-bold text-700 uppercase tracking-widest">Metadata Registry</span>
-                            <Button icon="pi pi-times" onClick={() => setShowInfo(false)} rounded text severity="secondary" size="small" />
+                            <Button icon="pi pi-times" onClick={() => setShowInfoPanel(false)} rounded text severity="secondary" size="small" />
                         </div>
                         <span className="p-input-icon-left w-full">
                             <i className="pi pi-search text-400" />
                             <InputText 
                                 value={metaFilter} 
                                 onChange={(e) => setMetaFilter(e.target.value)} 
-                                placeholder="Search attributes..." 
+                                placeholder="Filter properties..." 
                                 className="w-full p-inputtext-sm border-round-lg shadow-sm" 
                             />
                         </span>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-surface-0">
+                    <div className="flex-1 overflow-y-auto bg-surface-0 min-h-15rem md:max-h-none">
                          {isLoading ? (
                             <div className="flex flex-column align-items-center justify-content-center h-12rem gap-3">
                                 <ProgressSpinner style={{width: '24px', height: '24px'}} strokeWidth="4" />
@@ -410,10 +417,9 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                                 globalFilter={metaFilter}
                                 globalFilterFields={['property', 'value']}
                                 emptyMessage="Registry empty."
-                                rowClassName={() => 'border-bottom-1 border-50'}
                             >
-                                <Column field="property" header="Property" className="font-bold text-700 w-8rem py-3 px-4 surface-50"></Column>
-                                <Column field="value" header="Value" className="text-600 py-3 px-4"></Column>
+                                <Column field="property" header="Property" className="font-bold text-700 w-8rem py-2 surface-50 px-3"></Column>
+                                <Column field="value" header="Value" className="text-600 py-2 px-3"></Column>
                             </DataTable>
                         )}
                     </div>
@@ -455,6 +461,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 .pro-galleria-v4 .p-galleria-item-container {
                     flex: 1;
                     min-height: 0;
+                    background: var(--surface-0);
                 }
 
                 .pro-galleria-v4 .p-galleria-item {
@@ -462,23 +469,23 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                     width: 100%;
                 }
 
-                .shadow-left-2 {
-                    box-shadow: -8px 0 24px rgba(0,0,0,0.03);
+                .shadow-left-1 {
+                    box-shadow: -4px 0 12px rgba(0,0,0,0.02);
                 }
 
                 .custom-scrollbar::-webkit-scrollbar {
-                    width: 8px;
-                    height: 8px;
+                    width: 6px;
+                    height: 6px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-track {
-                    background: rgba(255, 255, 255, 0.05);
+                    background: var(--surface-0);
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: var(--surface-200);
                     border-radius: 4px;
                 }
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: rgba(255, 255, 255, 0.2);
+                    background: var(--surface-300);
                 }
             `}</style>
         </div>

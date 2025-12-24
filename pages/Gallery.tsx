@@ -24,7 +24,7 @@ const Gallery: React.FC = () => {
         </div>
 
         {/* Gallery Viewer with documentId passed as prop */}
-        <GalleryViewer documentId={currentDocId} />
+        <GalleryViewer documentId={currentDocId} showInfo={false} />
     </div>
   );
 };
