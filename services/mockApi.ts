@@ -50,8 +50,10 @@ export const mockFetchContent = async (id: string | number): Promise<{ base64: s
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
-    // Determine type based on ID conventions
-    const isPdf = String(id).includes('pdf') || String(id).includes('sample-hq-2') || (typeof id === 'number' && id % 4 === 0);
+    const idStr = String(id);
+    // Identify PDF if ID contains 'pdf', is the specific HQ sample, or follows the generated asset index pattern
+    const isAssetPdf = idStr.startsWith('asset-') && (parseInt(idStr.split('-').pop() || '0') + 1) % 4 === 0;
+    const isPdf = idStr.includes('pdf') || idStr.includes('sample-hq-2') || isAssetPdf;
 
     if (isPdf) {
         // A minimal valid 1-page PDF base64

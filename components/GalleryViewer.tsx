@@ -8,12 +8,13 @@ import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Galleria, GalleriaResponsiveOptions } from 'primereact/galleria';
 import { Checkbox } from 'primereact/checkbox';
+import { EmbedPDF } from './EmbedPDF';
 import { mockFetchContent, mockFetchMetadata, mockFetchGalleryItems, GalleryItem, GalleryMetadataItem } from '../services/mockApi';
 
 export interface GalleryViewerProps {
     documentId: string | number;
     metadata?: GalleryMetadataItem[];
-    showInfo?: boolean; // Renamed from showMetadataInitial
+    showInfo?: boolean; 
     onFetchItems?: (id: string | number) => Promise<GalleryItem[]>;
     onFetchContent?: (id: string | number) => Promise<{ base64: string; mimeType: string }>;
     onFetchMetadata?: (id: string | number) => Promise<GalleryMetadataItem[]>;
@@ -55,12 +56,10 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         { breakpoint: '560px', numVisible: 1 }
     ];
 
-    // Update internal state if prop changes
     useEffect(() => {
         setShowInfoPanel(showInfo);
     }, [showInfo]);
 
-    // Scroll active thumbnail into view
     useEffect(() => {
         if (thumbnailScrollRef.current) {
             const activeThumb = thumbnailScrollRef.current.children[activeIndex] as HTMLElement;
@@ -70,7 +69,6 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         }
     }, [activeIndex]);
 
-    // Fetch initial asset list based on documentId
     useEffect(() => {
         const fetchItems = async () => {
             setIsItemsLoading(true);
@@ -90,7 +88,6 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
     const activeItem = localItems[activeIndex];
 
-    // Fetch Content & Handle Metadata when active item changes
     useEffect(() => {
         let isMounted = true;
 
@@ -132,8 +129,8 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         return () => { isMounted = false; };
     }, [activeItem, onFetchContent, onFetchMetadata, propMetadata]);
 
-    const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 4));
-    const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.25));
+    const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 10)); // Max 1000%
+    const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.1)); // Min 10%
     const handleRotateCw = () => setRotation((prev) => prev + 90);
     const handleRotateCcw = () => setRotation((prev) => prev - 90);
     const handleFitScreen = () => { setZoom(1); setRotation(0); };
@@ -201,24 +198,26 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
 
         if (contentData.mimeType === 'application/pdf') {
             return (
-                <div className="w-full h-full flex align-items-center justify-content-center bg-surface-100 p-2 overflow-hidden">
-                     <iframe
-                        src={`data:application/pdf;base64,${contentData.base64}#toolbar=0`}
-                        className="w-full h-full border-none shadow-5 border-round-sm"
-                        style={{ maxWidth: '1000px', backgroundColor: '#fff' }}
-                        title="Document Viewer"
+                <div className="w-full h-full bg-surface-0 overflow-hidden">
+                    <EmbedPDF 
+                        data={contentData.base64} 
+                        fileName={item.title}
+                        className="border-none shadow-none"
                     />
                 </div>
             );
         }
 
         return (
-            <div className="w-full h-full bg-surface-0 overflow-auto custom-scrollbar p-3 flex align-items-start justify-content-start">
-                <div className="m-auto flex align-items-center justify-content-center transition-all transition-duration-300" 
+            <div className="w-full h-full bg-surface-0 overflow-auto custom-scrollbar flex">
+                <div className="m-auto transition-all transition-duration-300 p-3" 
                      style={{ 
                         minWidth: '100%', 
                         minHeight: '100%',
-                        transform: `rotate(${rotation}deg)` 
+                        transform: `rotate(${rotation}deg)`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                      }}>
                     <img 
                         src={`data:${contentData.mimeType};base64,${contentData.base64}`} 
@@ -282,7 +281,6 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 </div>
             </div>
 
-            {/* Other actions */}
             <div className="flex gap-1 align-items-center">
                 <div className="flex gap-1 border-right-1 border-200 pr-2 hidden md:flex">
                     <Button icon="pi pi-undo" className="toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" />
@@ -313,21 +311,19 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     return (
         <div className={`flex flex-column md:flex-row shadow-6 border-round-xl overflow-hidden surface-card border-1 border-200 ${className}`} style={{ minHeight: '500px', height: 'auto', maxHeight: 'calc(100vh - 12rem)', ...style }}>
             
-            {/* Asset Rail (Thumbnails Column on Left) */}
-            <div className="w-full md:w-7rem lg:w-9rem flex-shrink-0 bg-surface-50 border-bottom-1 md:border-bottom-none md:border-right-1 border-200 flex flex-row md:flex-column overflow-hidden">
-                
-                {/* Thumbnail Navigation Controls */}
-                <div className="flex md:flex-column align-items-center justify-content-center gap-2 py-2 md:py-3 border-right-1 md:border-right-none md:border-bottom-1 border-200 bg-surface-0 shadow-sm z-3 px-3">
+            {/* Asset Rail (Left Column) */}
+            <div className="w-full md:w-8rem lg:w-10rem flex-shrink-0 bg-surface-50 border-bottom-1 md:border-bottom-none md:border-right-1 border-200 flex flex-row md:flex-column overflow-hidden">
+                {/* One-Line Navigation Controls */}
+                <div className="flex align-items-center justify-content-between px-2 py-2 border-bottom-1 border-200 bg-surface-0 shadow-sm z-3 w-full md:flex-row">
                     <Button 
                         icon="pi pi-chevron-left" 
                         onClick={handlePrev} 
                         size="small" 
-                        rounded 
                         text 
-                        className="w-2rem h-2rem text-700 hover:bg-surface-100" 
+                        className="w-2rem h-2rem text-700 hover:bg-surface-100 p-0" 
                         tooltip="Previous"
                     />
-                    <div className="flex align-items-center text-900 text-xs font-bold bg-surface-0 border-1 border-200 px-2 py-1 border-round-sm mx-1">
+                    <div className="flex align-items-center text-900 text-xs font-bold px-1 select-none">
                         <span>{activeIndex + 1}</span>
                         <span className="mx-1 text-400">/</span>
                         <span className="text-400">{localItems.length}</span>
@@ -336,20 +332,18 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                         icon="pi pi-chevron-right" 
                         onClick={handleNext} 
                         size="small" 
-                        rounded 
                         text 
-                        className="w-2rem h-2rem text-700 hover:bg-surface-100" 
+                        className="w-2rem h-2rem text-700 hover:bg-surface-100 p-0" 
                         tooltip="Next"
                     />
                 </div>
 
-                {/* Thumbnails Strip (Scrollable) */}
-                <div className="flex-1 overflow-x-auto md:overflow-y-auto no-scrollbar py-2 px-2 md:px-0 flex flex-row md:flex-column align-items-center" ref={thumbnailScrollRef}>
+                <div className="flex-1 overflow-x-auto md:overflow-y-auto no-scrollbar py-2 px-2 md:px-0 flex flex-row md:flex-column align-items-center gap-2" ref={thumbnailScrollRef}>
                     {localItems.map((item, index) => (
                         <div 
                             key={item.id} 
                             onClick={() => setActiveIndex(index)}
-                            className={`flex-shrink-0 cursor-pointer border-round overflow-hidden transition-all mx-1 md:mx-0 md:my-2 border-2 w-4rem md:w-5rem lg:w-6rem shadow-sm ${index === activeIndex ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                            className={`flex-shrink-0 cursor-pointer border-round overflow-hidden transition-all border-2 w-4rem md:w-5rem lg:w-6rem shadow-sm ${index === activeIndex ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}
                             style={{ height: '4rem' }}
                         >
                             {item.thumbnail ? (
@@ -364,7 +358,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 </div>
             </div>
 
-            {/* Viewer Stage (Image in Middle) */}
+            {/* Viewer Stage (Middle Column) */}
             <div className="flex-1 min-w-0 flex flex-column bg-surface-0 relative overflow-hidden h-25rem md:h-full">
                 <Galleria 
                     ref={galleriaRef}
@@ -383,7 +377,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 />
             </div>
 
-            {/* Property Sidebar (Metadata Column on Right) */}
+            {/* Property Sidebar (Right Column) */}
             {showInfoPanel && (
                 <div className="w-full md:w-18rem lg:w-22rem flex-shrink-0 flex flex-column bg-surface-0 border-top-1 md:border-top-none md:border-left-1 border-200 shadow-left-1 transition-all">
                     <div className="p-3 lg:p-4 border-bottom-1 border-100 bg-surface-50">

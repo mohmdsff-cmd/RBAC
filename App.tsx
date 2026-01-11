@@ -15,6 +15,7 @@ import ActiveCases from './pages/ActiveCases';
 import Help from './pages/Help';
 import Unauthorized from './pages/Unauthorized';
 import PdfRedactionPage from './pages/PdfRedactionPage';
+import NotificationsPage from './pages/NotificationsPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -49,6 +50,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.GUEST, UserRole.VIEW_REPORTS, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+
+           {/* Protected Routes: Notifications Registry */}
+           <Route 
+            path="/notifications" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_SYSTEM]}>
+                <NotificationsPage />
               </ProtectedRoute>
             } 
           />

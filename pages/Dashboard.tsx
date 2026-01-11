@@ -1,34 +1,60 @@
 
-import React, { useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { RootState, AppDispatch } from '../store';
 import { Card } from 'primereact/card';
 import { Panel } from 'primereact/panel';
 import { Chart } from 'primereact/chart';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { Tag } from 'primereact/tag';
-import { Messages } from 'primereact/messages';
 import { Button } from 'primereact/button';
-import { ImageUploader } from '../components/ImageUploader';
+import { Tag } from 'primereact/tag';
+import { Dialog } from 'primereact/dialog';
+import { InputText } from 'primereact/inputtext';
+import { Notification } from '../slices/notificationSlice';
+import { removeBookmark, clearBookmarks } from '../slices/bookmarkSlice';
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { currentTheme } = useSelector((state: RootState) => state.theme); // Listen for theme changes
-  const msgs = useRef<Messages>(null);
+  const { items: notifications } = useSelector((state: RootState) => state.notifications);
+  const { items: bookmarks } = useSelector((state: RootState) => state.bookmarks);
+  const { currentTheme } = useSelector((state: RootState) => state.theme);
   
-  // State for chart options to force re-render on theme change
   const [chartOptions, setChartOptions] = useState({});
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [bookmarkSearch, setBookmarkSearch] = useState('');
 
-  useEffect(() => {
-    // Show a system notification on mount
-    msgs.current?.show([
-        { severity: 'info', summary: 'System Maintenance', detail: 'Scheduled maintenance this Sunday at 02:00 AM UTC.', sticky: true, closable: false },
-        { severity: 'warn', summary: 'Policy Update', detail: 'New evidence handling protocols are effective immediately.', sticky: true }
-    ]);
-  }, []);
+  const rowHeight = '520px';
 
-  // Update chart colors when theme changes
+  const feedItems = useMemo(() => {
+    return notifications;
+  }, [notifications]);
+
+  const filteredBookmarks = useMemo(() => {
+    if (!bookmarkSearch.trim()) return bookmarks;
+    return bookmarks.filter(b => 
+      b.title.toLowerCase().includes(bookmarkSearch.toLowerCase()) || 
+      b.subtitle.toLowerCase().includes(bookmarkSearch.toLowerCase())
+    );
+  }, [bookmarks, bookmarkSearch]);
+
+  const currentIndex = feedItems.findIndex(n => n.id === selectedNotification?.id);
+
+  const handleNext = () => {
+    if (currentIndex < feedItems.length - 1) setSelectedNotification(feedItems[currentIndex + 1]);
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) setSelectedNotification(feedItems[currentIndex - 1]);
+  };
+
+  const openNotification = (notif: Notification) => {
+    setSelectedNotification(notif);
+    setShowDetailDialog(true);
+  };
+
   useEffect(() => {
       const documentStyle = getComputedStyle(document.documentElement);
       const textColor = documentStyle.getPropertyValue('--text-color');
@@ -37,166 +63,140 @@ const Dashboard: React.FC = () => {
 
       setChartOptions({
         maintainAspectRatio: false,
-        aspectRatio: 0.6,
         plugins: {
-            legend: { labels: { color: textColor } }
+            legend: { position: 'bottom', labels: { color: textColor, usePointStyle: true } }
         },
         scales: {
-            x: { 
-                ticks: { color: textColorSecondary }, 
-                grid: { color: surfaceBorder } 
-            },
-            y: { 
-                ticks: { color: textColorSecondary }, 
-                grid: { color: surfaceBorder } 
-            }
+            x: { ticks: { color: textColorSecondary }, grid: { display: false } },
+            y: { ticks: { color: textColorSecondary }, grid: { color: surfaceBorder, borderDash: [5, 5] } }
         }
       });
   }, [currentTheme]);
 
-  // KPI Data
   const kpiData = [
-      { title: 'Pending Cases', value: '12', icon: 'pi pi-briefcase', color: 'blue', subtext: '+2 from yesterday' },
-      { title: 'Pending Docs', value: '5', icon: 'pi pi-file', color: 'orange', subtext: 'Requires review' },
-      { title: 'System Errors', value: '3', icon: 'pi pi-exclamation-triangle', color: 'red', subtext: 'Attention needed' },
-      { title: 'Processed Today', value: '48', icon: 'pi pi-check-circle', color: 'green', subtext: '98% efficiency' },
+      { title: 'Chargeback Win Rate', value: '72.4%', icon: 'pi pi-percentage', color: 'green', trend: '+4.2%', trendColor: 'text-green-500' },
+      { title: 'Net Recovered', value: '$242,500', icon: 'pi pi-money-bill', color: 'blue', trend: 'Monthly Avg', trendColor: 'text-blue-500' },
+      { title: 'Active Arb Cases', value: '18', icon: 'pi pi-shield', color: 'purple', trend: 'High Priority', trendColor: 'text-red-500' },
+      { title: 'Pre-Arb Deadline', value: '4h 12m', icon: 'pi pi-clock', color: 'orange', trend: 'SLA Limit', trendColor: 'text-orange-500' },
   ];
 
-  // Mock Chart Data - Case Volume
   const chartData = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
-        {
-            label: 'New Cases',
-            data: [28, 48, 40, 19, 86, 27, 90],
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-            borderColor: '#3b82f6',
-            fill: true,
-            tension: 0.4
-        },
-        {
-            label: 'Closed Cases',
-            data: [12, 51, 62, 33, 21, 62, 45],
-            backgroundColor: 'rgba(34, 197, 94, 0.2)',
-            borderColor: '#22c55e',
-            fill: true,
-            tension: 0.4
-        }
+        { label: 'Visa', data: [142, 159, 180, 201, 156, 125, 90], fill: true, borderColor: '#0055A4', backgroundColor: 'rgba(0, 85, 164, 0.1)', tension: 0.4 },
+        { label: 'Mastercard', data: [112, 129, 143, 105, 182, 113, 107], fill: true, borderColor: '#FF5F00', backgroundColor: 'rgba(255, 95, 0, 0.1)', tension: 0.4 }
     ]
   };
 
-  // Mock Table Data - Recent Cases
-  const recentCases = [
-    { id: 'CS-2023-001', type: 'Investigation', status: 'Active', assignee: 'Officer K.', priority: 'High' },
-    { id: 'CS-2023-045', type: 'Forensics', status: 'Pending Doc', assignee: 'Lab Tech', priority: 'Medium' },
-    { id: 'CS-2023-089', type: 'Court Order', status: 'Closed', assignee: 'Judge Dredd', priority: 'Low' },
-    { id: 'CS-2023-112', type: 'Warrant', status: 'Error', assignee: 'System', priority: 'High' },
-  ];
+  const hasCriticalOutage = notifications.some(n => n.type === 'error');
 
-  const statusTemplate = (rowData: any) => {
-      const severity = rowData.status === 'Active' ? 'success' : rowData.status === 'Error' ? 'danger' : rowData.status === 'Closed' ? 'info' : 'warning';
-      return <Tag value={rowData.status} severity={severity} />;
+  const renderDialogHeader = () => {
+    if (!selectedNotification) return null;
+    return (
+        <div className="flex align-items-center gap-2">
+            <i className={`pi ${selectedNotification.type === 'error' ? 'pi-exclamation-circle text-red-600' : 'pi-info-circle text-blue-600'} text-xl`}></i>
+            <span>{selectedNotification.title}</span>
+        </div>
+    );
   };
 
   return (
     <div className="grid">
-      {/* Welcome & Notifications */}
-      <div className="col-12">
-          <Messages ref={msgs} className="mb-2" />
-          <div className="flex flex-column md:flex-row justify-content-between align-items-center mb-4">
-              <div>
-                  <h1 className="text-3xl font-bold text-800 m-0">Dashboard Overview</h1>
-                  <p className="text-500 m-0">Welcome back, {user?.username}. Here's what's happening today.</p>
-              </div>
-              <div className="text-right mt-2 md:mt-0">
-                  <span className="block text-xl font-semibold text-primary">{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+      {/* Welcome Banner */}
+      <div className="col-12 mb-4">
+          <div className="surface-card p-4 border-round-xl shadow-2 border-1 border-200 flex flex-column md:flex-row align-items-center justify-content-between">
+              <h1 className="text-3xl font-bold text-900 m-0">Welcome back, {user?.username}</h1>
+              <div className="flex gap-2 mt-3 md:mt-0">
+                  <Tag value="Visa Gateway Active" severity="info" />
+                  <Tag value="Mastercard Node Active" severity="warning" />
               </div>
           </div>
       </div>
 
       {/* KPI Cards */}
       {kpiData.map((kpi, i) => (
-          <div key={i} className="col-12 md:col-6 lg:col-3">
-              <div className="surface-card shadow-1 p-3 border-round border-left-3 border-primary-500 h-full">
-                  <div className="flex justify-content-between mb-3">
+          <div key={i} className="col-12 md:col-6 lg:col-3 mb-4">
+              <div className="surface-card shadow-1 p-4 border-round-xl border-1 border-200 h-full flex flex-column justify-content-between">
+                  <div className="flex justify-content-between align-items-start mb-3">
                       <div>
-                          <span className="block text-500 font-medium mb-3">{kpi.title}</span>
-                          <div className="text-900 font-medium text-xl">{kpi.value}</div>
+                          <span className="block text-500 font-bold text-xs uppercase mb-1">{kpi.title}</span>
+                          <div className="text-900 font-bold text-2xl">{kpi.value}</div>
                       </div>
-                      <div className={`flex align-items-center justify-content-center bg-${kpi.color}-100 border-round`} style={{ width: '2.5rem', height: '2.5rem' }}>
+                      <div className={`flex align-items-center justify-content-center bg-${kpi.color}-50 border-round-lg`} style={{ width: '3rem', height: '3rem' }}>
                           <i className={`${kpi.icon} text-${kpi.color}-500 text-xl`} />
                       </div>
                   </div>
-                  <span className={`text-${kpi.color}-500 font-medium`}>{kpi.subtext}</span>
+                  <div className="flex align-items-center gap-2 mt-auto">
+                      <span className={`text-xs font-bold ${kpi.trendColor}`}>{kpi.trend}</span>
+                  </div>
               </div>
           </div>
       ))}
 
-      {/* Charts & Graphs */}
-      <div className="col-12 lg:col-8">
-        <Card title="Case Volume Analytics" subTitle="Weekly intake vs closed cases" className="shadow-1 h-full">
-            <Chart type="line" data={chartData} options={chartOptions} className="h-20rem" />
+      {/* Dashboard Row 2: Equal Height Components */}
+      <div className="col-12 lg:col-6 mb-4">
+        <Card className="shadow-2 border-round-xl border-1 border-200 flex flex-column equal-height-card" style={{ height: rowHeight }} title="Network Dispute Volume">
+            <div className="flex-1" style={{ minHeight: 0 }}>
+                <Chart type="line" data={chartData} options={chartOptions} style={{ height: '100%' }} />
+            </div>
         </Card>
       </div>
 
-      {/* Notifications Panel */}
-      <div className="col-12 lg:col-4">
-        <Panel header="Notifications" className="h-full">
-            <div className="flex flex-column gap-3">
-                <div className="flex align-items-center p-2 surface-hover border-round cursor-pointer transition-colors">
-                    <i className="pi pi-envelope text-blue-500 mr-3 text-2xl"></i>
-                    <div>
-                        <span className="font-semibold block text-sm">New Message from Admin</span>
-                        <span className="text-xs text-500">Just now</span>
-                    </div>
-                </div>
-                <div className="flex align-items-center p-2 surface-hover border-round cursor-pointer transition-colors">
-                    <i className="pi pi-file text-orange-500 mr-3 text-2xl"></i>
-                    <div>
-                        <span className="font-semibold block text-sm">Case #1024 Updated</span>
-                        <span className="text-xs text-500">2 hours ago</span>
-                    </div>
-                </div>
-                <div className="flex align-items-center p-2 surface-hover border-round cursor-pointer transition-colors">
-                    <i className="pi pi-check-circle text-green-500 mr-3 text-2xl"></i>
-                    <div>
-                        <span className="font-semibold block text-sm">System Backup Complete</span>
-                        <span className="text-xs text-500">5 hours ago</span>
-                    </div>
-                </div>
-                <div className="flex align-items-center p-2 surface-hover border-round cursor-pointer transition-colors">
-                    <i className="pi pi-exclamation-circle text-red-500 mr-3 text-2xl"></i>
-                    <div>
-                        <span className="font-semibold block text-sm">Failed Login Attempt</span>
-                        <span className="text-xs text-500">Yesterday</span>
-                    </div>
-                </div>
-                <div className="mt-2 text-center">
-                    <Button label="View All" link size="small" />
+      <div className="col-12 lg:col-3 mb-4">
+        <Panel header="Pinned Workspaces" className="shadow-2 border-round-xl border-1 border-200 flex flex-column equal-height-panel" style={{ height: rowHeight }}>
+            <div className="flex flex-column h-full overflow-hidden">
+                <span className="p-input-icon-left w-full mb-3 px-2">
+                    <i className="pi pi-search text-xs" />
+                    <InputText value={bookmarkSearch} onChange={(e) => setBookmarkSearch(e.target.value)} placeholder="Filter pins..." className="p-inputtext-sm w-full" />
+                </span>
+                <div className="overflow-y-auto flex-1 px-2 custom-scrollbar">
+                    {filteredBookmarks.map((bookmark) => (
+                        <div key={bookmark.id} onClick={() => navigate(bookmark.route)} className="surface-card p-2 border-round-lg mb-2 shadow-1 border-1 border-100 hover:border-primary transition-all cursor-pointer flex align-items-center gap-3">
+                            <div className={`flex-shrink-0 flex align-items-center justify-content-center bg-${bookmark.color}-50 border-round`} style={{ width: '2rem', height: '2rem' }}>
+                                <i className={`pi ${bookmark.icon} text-${bookmark.color}-500 text-sm`} />
+                            </div>
+                            <div className="flex flex-column overflow-hidden flex-1">
+                                <span className="text-xs font-bold text-900 truncate">{bookmark.title}</span>
+                                <span className="text-400" style={{ fontSize: '10px' }}>{bookmark.subtitle}</span>
+                            </div>
+                            <Button icon="pi pi-times" rounded text size="small" severity="secondary" onClick={(e) => { e.stopPropagation(); dispatch(removeBookmark(bookmark.id)); }} />
+                        </div>
+                    ))}
                 </div>
             </div>
         </Panel>
       </div>
 
-      {/* Recent Cases Table */}
-      <div className="col-12 md:col-6">
-        <Card title="Recent Activity" className="shadow-1 h-full">
-            <DataTable value={recentCases} stripedRows showGridlines size="small" className="text-sm">
-                <Column field="id" header="ID"></Column>
-                <Column field="type" header="Type"></Column>
-                <Column field="assignee" header="Assignee"></Column>
-                <Column field="status" header="Status" body={statusTemplate}></Column>
-            </DataTable>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="col-12 md:col-6">
-        <Panel header="Quick Upload Evidence" toggleable>
-          <p className="text-sm text-500 mb-3">Securely upload documents or images directly to the vault.</p>
-          <ImageUploader onUpload={(files) => console.log("Dashboard uploaded:", files)} />
+      <div className="col-12 lg:col-3 mb-4">
+        <Panel header="Message Feed" className="shadow-2 border-round-xl border-1 border-200 flex flex-column equal-height-panel" style={{ height: rowHeight }}>
+            <div className="flex flex-column h-full overflow-hidden">
+                <div className="overflow-y-auto flex-1 px-2 custom-scrollbar">
+                    {notifications.map((n) => (
+                        <div key={n.id} onClick={() => openNotification(n)} className={`p-2 border-round-lg mb-2 border-1 cursor-pointer transition-all ${n.type === 'error' ? 'bg-red-50 border-red-200' : 'surface-50 border-100 hover:bg-surface-100'}`}>
+                            <div className="flex align-items-center gap-2 mb-1">
+                                <i className={`pi ${n.type === 'error' ? 'pi-bolt text-red-600' : 'pi-info-circle text-blue-500'} text-xs`}></i>
+                                <span className="font-bold text-xs truncate">{n.title}</span>
+                            </div>
+                            <p className="text-500 m-0 overflow-hidden text-overflow-ellipsis" style={{ fontSize: '10px', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical' }}>{n.message}</p>
+                        </div>
+                    ))}
+                    <Button label="Audit Registry" icon="pi pi-external-link" text size="small" className="w-full mt-2" onClick={() => navigate('/notifications')} />
+                </div>
+            </div>
         </Panel>
       </div>
+
+      <Dialog header={renderDialogHeader()} visible={showDetailDialog} style={{ width: '400px' }} onHide={() => setShowDetailDialog(false)} footer={<Button label="Close" text onClick={() => setShowDetailDialog(false)} />}>
+        {selectedNotification && <p className="line-height-3">{selectedNotification.message}</p>}
+      </Dialog>
+
+      <style>{`
+        .equal-height-card .p-card-body, .equal-height-card .p-card-content { display: flex; flex-direction: column; flex: 1; height: 100%; padding: 1.25rem !important; }
+        .equal-height-panel .p-panel-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 1rem 0.5rem; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--surface-300); border-radius: 10px; }
+        .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      `}</style>
     </div>
   );
 };

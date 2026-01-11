@@ -1,5 +1,5 @@
 {
-  "name": "Copy of PrimeSecure RBAC",
-  "description": "A secure, role-based React application utilizing PrimeReact for UI components and Redux Toolkit for state management.",
+  "name": "DisputeHub 360",
+  "description": "Enterprise-grade Chargeback and Dispute Management System for Visa and Mastercard network processing.",
   "requestFramePermissions": []
 }
