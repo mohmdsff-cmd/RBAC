@@ -16,6 +16,9 @@ import Help from './pages/Help';
 import Unauthorized from './pages/Unauthorized';
 import PdfRedactionPage from './pages/PdfRedactionPage';
 import NotificationsPage from './pages/NotificationsPage';
+import UploadPortal from './pages/UploadPortal';
+import EvidenceSubmission from './pages/EvidenceSubmission';
+import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -41,7 +44,8 @@ const App: React.FC = () => {
     <Router>
       <Layout>
         <Routes>
-          {/* Public/Error Routes */}
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Protected Routes: Dashboard */}
@@ -74,12 +78,32 @@ const App: React.FC = () => {
             } 
           />
 
-          {/* Protected Routes: PDF Redaction (New) */}
+          {/* Protected Routes: PDF Redaction */}
           <Route 
             path="/redact" 
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEW_DOCUMENTS]}>
                 <PdfRedactionPage />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Upload Portal (Generic) */}
+          <Route 
+            path="/upload" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS]}>
+                <UploadPortal />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Evidence Submission (New) */}
+          <Route 
+            path="/evidence" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS]}>
+                <EvidenceSubmission />
               </ProtectedRoute>
             } 
           />
@@ -114,7 +138,7 @@ const App: React.FC = () => {
             } 
           />
 
-          {/* Protected Routes: Range Reports (New) */}
+          {/* Protected Routes: Range Reports */}
           <Route 
             path="/range-reports" 
             element={

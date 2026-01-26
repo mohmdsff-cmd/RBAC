@@ -10,7 +10,7 @@ import { RootState, AppDispatch } from '../store';
 // Configuration: 1 Minute Idle -> 1 Minute Warning -> Logout
 const WARNING_DURATION_S = 60;
 const WARNING_THRESHOLD_MS = WARNING_DURATION_S * 1000;
-const IDLE_BEFORE_WARNING_MS = 60 * 1000; 
+const IDLE_BEFORE_WARNING_MS = 15 * 60 * 1000; 
 const SESSION_TIMEOUT_MS = IDLE_BEFORE_WARNING_MS + WARNING_THRESHOLD_MS;
 
 const TICK_INTERVAL_MS = 1000;

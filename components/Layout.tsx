@@ -8,7 +8,6 @@ import { AppDispatch, RootState } from '../store';
 import { logout } from '../slices/authSlice';
 import { markAsRead, markAllAsRead } from '../slices/notificationSlice';
 import { toggleBookmark } from '../slices/bookmarkSlice';
-import { UserRole } from '../types';
 import { MenuItem } from 'primereact/menuitem';
 import { Menu } from 'primereact/menu';
 import { Avatar } from 'primereact/avatar';
@@ -35,7 +34,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleLogout = () => {
     dispatch(logout());
-    window.location.reload(); 
+    navigate('/login');
   };
 
   const handlePinPage = () => {
@@ -53,6 +52,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       else if (path === '/search') { title = "Secure Search"; icon = "pi-search"; color = "indigo"; }
       else if (path === '/redact') { title = "Redaction Tool"; icon = "pi-shield"; color = "red"; }
       else if (path === '/notifications') { title = "Audit Log"; icon = "pi-list"; color = "blue"; }
+      else if (path === '/upload') { title = "Upload Portal"; icon = "pi-upload"; color = "teal"; }
+      else if (path === '/evidence') { title = "Evidence Locker"; icon = "pi-lock"; color = "teal"; }
 
       dispatch(toggleBookmark({
           id: `BK-${Date.now()}`,
@@ -119,7 +120,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     label: 'Evidence & Compliance',
                     items: [
                         { label: 'Document Vault', icon: 'pi pi-images', command: () => navigate('/gallery') },
-                        { label: 'PII Redaction', icon: 'pi pi-shield', command: () => navigate('/redact') }
+                        { label: 'Submit Evidence', icon: 'pi pi-lock', command: () => navigate('/evidence') },
+                        { label: 'PII Redaction', icon: 'pi pi-shield', command: () => navigate('/redact') },
+                        { label: 'Upload Portal', icon: 'pi pi-upload', command: () => navigate('/upload') }
                     ]
                 }
             ]
@@ -215,7 +218,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
     </div>
   ) : (
-    <Button label="Login" icon="pi pi-user" size="small" onClick={() => window.location.reload()} />
+    <Button label="Login" icon="pi pi-user" size="small" onClick={() => navigate('/login')} />
   );
 
   return (

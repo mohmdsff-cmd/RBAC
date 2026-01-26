@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { AuthState, User, UserRole } from '../types';
 
@@ -33,21 +34,18 @@ export const fetchUserProfile = createAsyncThunk(
   'auth/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
-      // Simulate network latency
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Mock response from /api/me
-      // In a real app, this would come from the backend based on the session cookie/token
+      // Login disabled: Resolve immediately with Admin user
       const mockUser: User = {
-        id: 'usr_123456',
-        username: 'AdminUser', // Simulating an Admin user
+        id: 'usr_admin_bypass',
+        username: 'AdminUser', 
         roles: [
           UserRole.ADMIN, 
           UserRole.VIEW_REPORTS, 
           UserRole.VIEW_DOCUMENTS, 
-          UserRole.VIEW_SYSTEM
+          UserRole.VIEW_SYSTEM,
+          UserRole.USER
         ],
-        avatarUrl: `https://ui-avatars.com/api/?name=Admin+User&background=random`
+        avatarUrl: `https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff`
       };
       
       return mockUser;
@@ -57,10 +55,22 @@ export const fetchUserProfile = createAsyncThunk(
   }
 );
 
+// Default state is authenticated to bypass login screen
 const initialState: AuthState = {
-  user: null,
-  isAuthenticated: false,
-  isLoading: true, // Start as loading to check auth on mount
+  user: {
+    id: 'usr_admin_bypass',
+    username: 'AdminUser',
+    roles: [
+        UserRole.ADMIN, 
+        UserRole.VIEW_REPORTS, 
+        UserRole.VIEW_DOCUMENTS, 
+        UserRole.VIEW_SYSTEM,
+        UserRole.USER
+    ],
+    avatarUrl: `https://ui-avatars.com/api/?name=Admin+User&background=0D8ABC&color=fff`
+  },
+  isAuthenticated: true,
+  isLoading: false, 
   error: null,
 };
 
@@ -80,7 +90,7 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(fetchUserProfile.pending, (state) => {
-        state.isLoading = true;
+        // Do not set isLoading to true to avoid flashing spinner on already authenticated state
         state.error = null;
       })
       .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<User>) => {
@@ -90,7 +100,8 @@ const authSlice = createSlice({
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
         state.isLoading = false;
-        state.isAuthenticated = false;
+        // Even if fetch fails, keep default state to ensure access
+        // state.isAuthenticated = false; 
         state.error = action.payload as string;
       })
       .addCase(loginUser.pending, (state) => {

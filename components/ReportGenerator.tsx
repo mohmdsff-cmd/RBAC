@@ -4,6 +4,7 @@ import { Card } from 'primereact/card';
 import { Calendar } from 'primereact/calendar';
 import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
+import FileSaver from 'file-saver';
 import { ReportSortControl, SortDirection } from './ReportSortControl';
 
 interface ReportGeneratorProps {
@@ -40,7 +41,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({ apiUrl, range 
         { label: 'Status', value: 'status' }
     ];
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         // Validation
         if (range) {
              if (!startDate || !endDate) {
@@ -65,24 +66,94 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({ apiUrl, range 
 
         setLoading(true);
 
-        // Simulate API call using apiUrl
-        console.log(`Generating report from: ${apiUrl}`);
-        console.log(`Sort 1: ${primarySort} (${primaryDir})`);
-        console.log(`Sort 2: ${secondarySort} (${secondaryDir})`);
+        try {
+            // Construct Payload for Spring API
+            const payload: any = {
+                primarySort,
+                primaryDir,
+                secondarySort,
+                secondaryDir,
+                format: 'pdf', // defaulting to PDF, could be dynamic
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            };
 
-        setTimeout(() => {
-            setLoading(false);
-            const detailText = range && startDate && endDate
-                ? `Report for ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
-                : `Report for ${date?.toLocaleDateString()}`;
+            if (range) {
+                payload.startDate = startDate;
+                payload.endDate = endDate;
+            } else {
+                payload.date = date;
+            }
+
+            console.log(`Requesting report from: ${apiUrl}`, payload);
+
+            // Fetch request to Spring API
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/pdf, text/csv, application/vnd.ms-excel'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+
+            // Process blob response
+            const blob = await response.blob();
             
+            // Extract filename from Content-Disposition header if available
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = `Report_${range ? 'Period' : 'Daily'}_${new Date().getTime()}.pdf`;
+            
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
+            // Trigger Download via FileSaver
+            FileSaver.saveAs(blob, filename);
+
             toast.current?.show({ 
                 severity: 'success', 
-                summary: 'Report Generated', 
-                detail: `${detailText} downloaded successfully.`, 
+                summary: 'Download Complete', 
+                detail: 'Report downloaded successfully.', 
                 life: 3000 
             });
-        }, 2000);
+
+        } catch (error) {
+            console.error("Report generation failed:", error);
+
+            // --- FALLBACK FOR DEMO PURPOSES (Since API might not exist locally) ---
+            console.warn("Generating Client-Side Mock Report due to API failure...");
+            
+            const mockContent = `DISPUTEHUB 360 REPORT\n` + 
+                                `Title: ${title}\n` +
+                                `Generated: ${new Date().toLocaleString()}\n` +
+                                `Range: ${range ? `${startDate?.toLocaleDateString()} to ${endDate?.toLocaleDateString()}` : date?.toLocaleDateString()}\n` + 
+                                `Sort By: ${primarySort} (${primaryDir})\n` +
+                                `----------------------------------------\n` +
+                                `ERROR: Could not connect to Spring API at ${apiUrl}.\n` +
+                                `This is a generated mock file for demonstration.`;
+            
+            const mockBlob = new Blob([mockContent], { type: "text/plain;charset=utf-8" });
+            FileSaver.saveAs(mockBlob, `${title.replace(/\s+/g, '_')}_MOCK.txt`);
+
+            toast.current?.show({ 
+                severity: 'warn', 
+                summary: 'Mock Report Generated', 
+                detail: 'Backend unreachable. Downloaded client-side mock file.', 
+                life: 5000 
+            });
+            // ---------------------------------------------------------------------
+
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -177,7 +248,7 @@ export const ReportGenerator: React.FC<ReportGeneratorProps> = ({ apiUrl, range 
             {/* Actions */}
             <div className="flex justify-content-end align-items-center mt-5 pt-4 border-top-1 border-200">
                 <Button 
-                    label={loading ? "Processing..." : "Download Report"} 
+                    label={loading ? "Generating Report..." : "Download Report"} 
                     icon={loading ? "pi pi-spin pi-spinner" : "pi pi-download"} 
                     onClick={handleDownload} 
                     disabled={loading}

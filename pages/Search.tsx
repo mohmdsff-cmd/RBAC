@@ -173,11 +173,9 @@ const Search: React.FC = () => {
     setSelectedNode(null);
     setSelectedNodeKey(undefined);
     
-    // Use the term as ID for tree generation, fallback to 'Unknown' if searching by amount/card
     const searchId = criteria.term || 'Unknown';
 
     try {
-        // Fetch from all 3 "APIs" simultaneously
         const [policeData, forensicsData, courtData] = await Promise.all([
             fetchPoliceData(searchId),
             fetchForensicsData(searchId),
@@ -211,6 +209,10 @@ const Search: React.FC = () => {
     setSelectedNode(e.node);
     setZoom(1); 
     setRotation(0); 
+  };
+  
+  const onNodeUnselect = () => {
+    setSelectedNode(null);
   };
 
   // Image Toolbar Handlers
@@ -264,7 +266,7 @@ const Search: React.FC = () => {
   };
 
   const renderCenterContent = () => {
-    if (!selectedNode) {
+    if (!selectedNode || !selectedNode.data) {
         return (
             <div className="flex flex-column align-items-center justify-content-center h-full text-400">
                 <i className="pi pi-inbox text-5xl mb-3"></i>
@@ -307,7 +309,6 @@ const Search: React.FC = () => {
                         Enter a criteria to retrieve aggregated data from connected systems.
                     </p>
                     
-                    {/* Reusable Advanced Search Component */}
                     <AdvancedSearch 
                         onSearch={handleSearch} 
                         loading={loading} 
@@ -359,6 +360,8 @@ const Search: React.FC = () => {
                                     selectionKeys={selectedNodeKey} 
                                     onSelectionChange={(e) => setSelectedNodeKey(e.value)}
                                     onSelect={onNodeSelect}
+                                    onUnselect={onNodeUnselect}
+                                    metaKeySelection={false}
                                     filter 
                                     filterMode="lenient" 
                                     filterPlaceholder="Filter items..."
@@ -369,7 +372,7 @@ const Search: React.FC = () => {
 
                         {/* Panel 2: Image Canvas with Toolbar */}
                         <SplitterPanel size={50} minSize={30} className="overflow-hidden surface-ground relative flex flex-column">
-                            {selectedNode && (selectedNode.data as NodeData).type === 'image' && (
+                            {selectedNode && selectedNode.data && (selectedNode.data as NodeData).type === 'image' && (
                                <div className="h-4rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
                                    <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">{selectedNode.label}</span>
                                    <div className="flex gap-1 align-items-center">

@@ -21,8 +21,8 @@ const Unauthorized: React.FC = () => {
             Please contact your administrator if you believe this is an error.
         </p>
         <div className="flex justify-content-center gap-2">
-            <Button label="Go Back" icon="pi pi-arrow-left" outlined onClick={() => navigate(-1)} />
             <Button label="Dashboard" icon="pi pi-home" onClick={() => navigate('/dashboard')} />
+            <Button label="Switch Account" icon="pi pi-sign-in" severity="secondary" onClick={() => navigate('/login')} />
         </div>
       </Card>
     </div>

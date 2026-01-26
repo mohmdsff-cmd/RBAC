@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -11,10 +12,11 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
   
   if (!isAuthenticated || !user) {
-    // Since we don't have a login page (SSO assumed), we redirect to Unauthorized
-    return <Navigate to="/unauthorized" replace />;
+    // Redirect to login to allow re-authentication
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if the user has ANY of the allowed roles
