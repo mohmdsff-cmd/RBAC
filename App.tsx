@@ -14,7 +14,6 @@ import Search from './pages/Search';
 import ActiveCases from './pages/ActiveCases';
 import Help from './pages/Help';
 import Unauthorized from './pages/Unauthorized';
-import PdfRedactionPage from './pages/PdfRedactionPage';
 import NotificationsPage from './pages/NotificationsPage';
 import UploadPortal from './pages/UploadPortal';
 import EvidenceSubmission from './pages/EvidenceSubmission';
@@ -74,16 +73,6 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS]}>
                 <Gallery />
-              </ProtectedRoute>
-            } 
-          />
-
-          {/* Protected Routes: PDF Redaction */}
-          <Route 
-            path="/redact" 
-            element={
-              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.VIEW_DOCUMENTS]}>
-                <PdfRedactionPage />
               </ProtectedRoute>
             } 
           />

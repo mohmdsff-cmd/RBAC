@@ -50,7 +50,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       else if (path === '/reports') { title = "Daily Reports"; icon = "pi-chart-bar"; color = "purple"; }
       else if (path === '/active-cases') { title = "Case Queue"; icon = "pi-briefcase"; color = "green"; }
       else if (path === '/search') { title = "Secure Search"; icon = "pi-search"; color = "indigo"; }
-      else if (path === '/redact') { title = "Redaction Tool"; icon = "pi-shield"; color = "red"; }
       else if (path === '/notifications') { title = "Audit Log"; icon = "pi-list"; color = "blue"; }
       else if (path === '/upload') { title = "Upload Portal"; icon = "pi-upload"; color = "teal"; }
       else if (path === '/evidence') { title = "Evidence Locker"; icon = "pi-lock"; color = "teal"; }
@@ -121,7 +120,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     items: [
                         { label: 'Document Vault', icon: 'pi pi-images', command: () => navigate('/gallery') },
                         { label: 'Submit Evidence', icon: 'pi pi-lock', command: () => navigate('/evidence') },
-                        { label: 'PII Redaction', icon: 'pi pi-shield', command: () => navigate('/redact') },
                         { label: 'Upload Portal', icon: 'pi pi-upload', command: () => navigate('/upload') }
                     ]
                 }

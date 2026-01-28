@@ -13,11 +13,29 @@ export interface GalleryItem {
     description?: string;
 }
 
-// Added missing interface GalleryMetadataItem
 export interface GalleryMetadataItem {
     property: string;
     value: any;
 }
+
+export interface CaseSummary {
+    id: string;
+    title: string;
+    status: 'Open' | 'Closed' | 'Under Review';
+    files: number;
+    updated: string;
+}
+
+export const mockFetchCases = async (): Promise<CaseSummary[]> => {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    return [
+        { id: 'CB-2023-8842', title: 'Chargeback Dispute - Electronics', status: 'Under Review', files: 14, updated: '2023-11-20' },
+        { id: 'FR-2023-9921', title: 'Fraud Investigation - Retail', status: 'Open', files: 8, updated: '2023-11-19' },
+        { id: 'AR-2023-1002', title: 'Arbitration Case - Services', status: 'Open', files: 22, updated: '2023-11-18' },
+        { id: 'CB-2023-8810', title: 'Refund Claim - Digital Goods', status: 'Closed', files: 5, updated: '2023-11-10' },
+        { id: 'KYC-2023-4421', title: 'Merchant KYC Verification', status: 'Under Review', files: 12, updated: '2023-11-05' },
+    ];
+};
 
 export const mockFetchGalleryItems = async (documentId: string | number): Promise<GalleryItem[]> => {
     await new Promise(resolve => setTimeout(resolve, 600));
@@ -56,8 +74,8 @@ export const mockFetchContent = async (id: string | number): Promise<{ base64: s
     const isPdf = idStr.includes('pdf') || idStr.includes('sample-hq-2') || isAssetPdf;
 
     if (isPdf) {
-        // A minimal valid 1-page PDF base64
-        const dummyPdfBase64 = "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwogIC9QYWdlcyAyIDAgUgo+PgRlbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXwKICAvTWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0KPj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSC4gIC9SZXNvdXJjZXMgPDwKICAgIC9Gb250IDw8CiAgICAgIC9GMSA0IDAgUgogICAgPj4KICA+PgogIC9Db250ZW50cyA1IDAgUgo+PgRlbmRvYmoKCjQgMCBvYmoKPDwKICAvVHlwZSAvRm9udAogIC9TdWJ0eXBlIC9UeXBlMQogIC9CYXNlRm9udCAvVGltZXMtUm9tYW4KPj4KZW5kb2JqCgo1IDAgb2JqCiAgPDwgL0xlbmd0aCA0NCA+PgpzdHJlYW0KQlQKNzAgNTAgVGQKL0YxIDEyIFRmCihIZWxsbywgdGhpcyBpcyBhIFBERiBkb2N1bWVudC4pIFRqCkVUCmVuZHN0cmVhbQRlbmRvYmoKCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxMCAwMDAwMCBuIAowMDAwMDAwMDYwIDAwMDAwIG4gCjAwMDAwMDAxNTcgMDAwMDAgbiAKMDAwMDAwMDI1NSAwMDAwMCBuIAowMDAwMDAwMzYyIDAwMDAwIG4gCnRyYWlsZXIKPDwKICAvU2l6ZSA2CiAgL1Jvb3QgMSAwIFIKPj4Kc3RhcnR4cmVmCjQ1OQolJUVPRgo=";
+        // A minimal valid 1-page PDF base64 (Fixed: Removed invalid '.' character from previous version)
+        const dummyPdfBase64 = "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwogIC9QYWdlcyAyIDAgUgo+PgRlbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXwKICAvTWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0KPj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAgL1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSCiAgICA+PgogID4+CiAgL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iagoKNCAwIG9iago8PAogIC9UeXBlIC9Gb250CiAgL1N1YnR5cGUgL1R5cGUxCiAgL0Jhc2VGb250IC9UaW1lcy1Sb21hbgo+PgRlbmRvYmoKCjUgMCBvYmoKICA8PCAvTGVuZ3RoIDQ0ID4+CnN0cmVhbQpCVAo3MCA1MCBUZAovRjEgMTIgVGYKKEhlbGxvLCB0aGlzIGlzIGEgUERGIGRvY3VtZW50LikgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4gCjAwMDAwMDAwNjAgMDAwMDAgbiAKMDAwMDAwMDE1NyAwMDAwMCBuIAowMDAwMDAwMjU1IDAwMDAwIG4gCjAwMDAwMDAzNjIgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDU5CiUlRU9GCg==";
         return { base64: dummyPdfBase64, mimeType: 'application/pdf' };
     } else {
         try {
@@ -67,7 +85,9 @@ export const mockFetchContent = async (id: string | number): Promise<{ base64: s
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const base64data = reader.result as string;
-                    const rawBase64 = base64data.split(',')[1]; 
+                    // Some browsers might not return the prefix in all contexts, but FileReader usually does.
+                    // Split safely.
+                    const rawBase64 = base64data.includes(',') ? base64data.split(',')[1] : base64data; 
                     resolve({ base64: rawBase64, mimeType: 'image/jpeg' });
                 };
                 reader.readAsDataURL(blob);

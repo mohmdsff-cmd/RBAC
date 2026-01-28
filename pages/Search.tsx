@@ -1,6 +1,5 @@
 
-import React, { useState } from 'react';
-import { Splitter, SplitterPanel } from 'primereact/splitter';
+import React, { useState, useRef } from 'react';
 import { Tree } from 'primereact/tree';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
@@ -9,6 +8,8 @@ import { Column } from 'primereact/column';
 import { Card } from 'primereact/card';
 import { TreeNode } from 'primereact/treenode';
 import { Tooltip } from 'primereact/tooltip';
+import { ContextMenu } from 'primereact/contextmenu';
+import { MenuItem } from 'primereact/menuitem';
 import { AdvancedSearch } from '../components/AdvancedSearch';
 import { SearchCriteria } from '../services/mockApi';
 
@@ -29,6 +30,11 @@ const Search: React.FC = () => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [metaFilter, setMetaFilter] = useState('');
+  
+  // UI State
+  const [showMetadata, setShowMetadata] = useState(true);
+  const [menuModel, setMenuModel] = useState<MenuItem[]>([]);
+  const cm = useRef<ContextMenu>(null);
 
   // --- Mock API 1: Police Records System ---
   const fetchPoliceData = async (id: string): Promise<TreeNode> => {
@@ -205,6 +211,29 @@ const Search: React.FC = () => {
     }
   };
 
+  const handleRefresh = () => {
+    if (activeCriteria) {
+      handleSearch(activeCriteria);
+    }
+  };
+
+  const toggleExpansion = (isExpanded: boolean) => {
+    const _nodes = [...nodes];
+    const traverse = (items: TreeNode[]) => {
+      items.forEach(item => {
+        item.expanded = isExpanded;
+        if (item.children) traverse(item.children);
+      });
+    };
+    traverse(_nodes);
+    setNodes(_nodes);
+  };
+
+  const toggleNodeExpansion = (node: TreeNode) => {
+      node.expanded = !node.expanded;
+      setNodes([...nodes]);
+  };
+
   const onNodeSelect = (e: any) => {
     setSelectedNode(e.node);
     setZoom(1); 
@@ -265,6 +294,61 @@ const Search: React.FC = () => {
     }
   };
 
+  const onNodeContextMenu = (event: any) => {
+    const node = event.node;
+    setSelectedNode(node);
+    setSelectedNodeKey(node.key);
+    // Reset canvas state on context selection
+    setZoom(1); 
+    setRotation(0);
+
+    const items: MenuItem[] = [];
+    const data = node.data as NodeData;
+
+    if (data.type === 'image') {
+        items.push({ 
+            label: 'View', 
+            icon: 'pi pi-fw pi-eye', 
+            command: () => {} // Selection already handled
+        });
+        items.push({ separator: true });
+        items.push({ 
+            label: 'Download', 
+            icon: 'pi pi-fw pi-download', 
+            command: () => handleDownload()
+        });
+        items.push({ 
+            label: 'Print', 
+            icon: 'pi pi-fw pi-print', 
+            command: () => handlePrint()
+        });
+    } else if (data.type === 'folder') {
+         items.push({
+             label: node.expanded ? 'Collapse' : 'Expand',
+             icon: node.expanded ? 'pi pi-fw pi-folder' : 'pi pi-fw pi-folder-open',
+             command: () => toggleNodeExpansion(node)
+         });
+    } else {
+        items.push({
+             label: 'View Details',
+             icon: 'pi pi-fw pi-list',
+             command: () => setShowMetadata(true)
+        });
+    }
+    
+    items.push({ separator: true });
+    items.push({
+        label: showMetadata ? 'Hide Metadata' : 'Show Metadata',
+        icon: 'pi pi-fw pi-info-circle',
+        command: () => setShowMetadata(!showMetadata)
+    });
+
+    setMenuModel(items);
+    if (cm.current) {
+        cm.current.show(event.originalEvent);
+    }
+  };
+
   const renderCenterContent = () => {
     if (!selectedNode || !selectedNode.data) {
         return (
@@ -299,8 +383,12 @@ const Search: React.FC = () => {
     );
   };
 
+  const isImage = selectedNode?.data && (selectedNode.data as NodeData).type === 'image';
+
   return (
     <div className="flex flex-column md:flex-row gap-4" style={{ height: 'calc(100vh - 9rem)' }}>
+        <ContextMenu model={menuModel} ref={cm} />
+        
         {/* Left Sidebar: Search Configuration */}
         <div className="w-full md:w-22rem flex-shrink-0 flex flex-column">
             <Card title="Case Search" className="h-full shadow-1 flex flex-column">
@@ -337,102 +425,102 @@ const Search: React.FC = () => {
 
         {/* Right Side: Results Area */}
         <div className="flex-1 overflow-hidden h-full">
-            {!searched ? (
-                 <div className="h-full flex flex-column align-items-center justify-content-center surface-ground border-round border-2 border-dashed border-300">
-                    <div className="text-center text-400 p-6">
-                        <i className="pi pi-server text-6xl mb-4 opacity-50"></i>
-                        <h3 className="text-xl font-medium mb-2">No Data Loaded</h3>
-                        <p className="max-w-20rem mx-auto">Use the sidebar to search across Police, Forensics, and Court databases.</p>
+            <div className="flex h-full w-full border-1 border-300 border-round shadow-1 surface-card overflow-hidden">
+                {/* Panel 1: Tree with Filter */}
+                <div className="w-18rem md:w-20rem flex flex-column border-right-1 border-200 h-full flex-shrink-0 bg-surface-0 overflow-hidden">
+                    <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex justify-content-end align-items-center">
+                        <div className="flex gap-1">
+                            <Button icon="pi pi-angle-double-down" rounded text severity="secondary" tooltip="Expand All" onClick={() => toggleExpansion(true)} disabled={nodes.length === 0} />
+                            <Button icon="pi pi-angle-double-up" rounded text severity="secondary" tooltip="Collapse All" onClick={() => toggleExpansion(false)} disabled={nodes.length === 0} />
+                            <Button icon="pi pi-refresh" rounded text severity="secondary" tooltip="Refresh Data" onClick={handleRefresh} disabled={!activeCriteria} />
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-auto custom-scrollbar p-2">
+                            <Tree 
+                            value={nodes} 
+                            selectionMode="single" 
+                            selectionKeys={selectedNodeKey} 
+                            onSelectionChange={(e) => setSelectedNodeKey(e.value)}
+                            onSelect={onNodeSelect}
+                            onUnselect={onNodeUnselect}
+                            onContextMenu={onNodeContextMenu}
+                            metaKeySelection={false}
+                            filter 
+                            filterMode="lenient" 
+                            filterPlaceholder="Filter items..."
+                            className="w-full border-none p-0"
+                        />
                     </div>
                 </div>
-            ) : (
-                <div className="h-full border-1 border-300 border-round shadow-1 surface-card overflow-hidden">
-                    <Splitter style={{ height: '100%' }}>
-                        {/* Panel 1: Tree with Filter */}
-                        <SplitterPanel size={25} minSize={20} className="overflow-hidden flex flex-column">
-                            <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex justify-content-between align-items-center">
-                                <span>Data Sources</span>
-                            </div>
-                            <div className="flex-1 overflow-auto custom-scrollbar p-2">
-                                 <Tree 
-                                    value={nodes} 
-                                    selectionMode="single" 
-                                    selectionKeys={selectedNodeKey} 
-                                    onSelectionChange={(e) => setSelectedNodeKey(e.value)}
-                                    onSelect={onNodeSelect}
-                                    onUnselect={onNodeUnselect}
-                                    metaKeySelection={false}
-                                    filter 
-                                    filterMode="lenient" 
-                                    filterPlaceholder="Filter items..."
-                                    className="w-full border-none p-0"
-                                />
-                            </div>
-                        </SplitterPanel>
 
-                        {/* Panel 2: Image Canvas with Toolbar */}
-                        <SplitterPanel size={50} minSize={30} className="overflow-hidden surface-ground relative flex flex-column">
-                            {selectedNode && selectedNode.data && (selectedNode.data as NodeData).type === 'image' && (
-                               <div className="h-4rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
-                                   <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">{selectedNode.label}</span>
-                                   <div className="flex gap-1 align-items-center">
-                                        <Tooltip target=".search-toolbar-btn" />
-                                        <Button icon="pi pi-search-plus" className="search-toolbar-btn" onClick={handleZoomIn} rounded text severity="secondary" tooltip="Zoom In" />
-                                        <Button icon="pi pi-search-minus" className="search-toolbar-btn" onClick={handleZoomOut} rounded text severity="secondary" tooltip="Zoom Out" />
-                                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                                        <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} />
-                                        <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
-                                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                                        <Button icon="pi pi-arrows-alt" className="search-toolbar-btn" onClick={handleFitScreen} rounded text severity="secondary" tooltip="Reset View" />
-                                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                                        <Button icon="pi pi-print" className="search-toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
-                                        <Button icon="pi pi-download" className="search-toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" />
-                                   </div>
-                               </div>
-                            )}
-                            <div className="flex-1 overflow-hidden relative surface-100">
-                                 {renderCenterContent()}
-                            </div>
-                        </SplitterPanel>
-
-                        {/* Panel 3: Metadata */}
-                        <SplitterPanel size={25} minSize={15} className="overflow-hidden flex flex-column">
-                             <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex flex-column gap-2">
-                                <span>Metadata</span>
-                                <span className="p-input-icon-left w-full">
-                                    <i className="pi pi-search text-400" />
-                                    <InputText 
-                                        value={metaFilter} 
-                                        onChange={(e) => setMetaFilter(e.target.value)} 
-                                        placeholder="Filter..." 
-                                        className="w-full p-inputtext-sm" 
-                                    />
-                                </span>
-                            </div>
-                            <div className="flex-1 overflow-auto custom-scrollbar">
-                                {selectedNode && selectedNode.data ? (
-                                    <DataTable 
-                                        value={(selectedNode.data as NodeData).metadata} 
-                                        stripedRows 
-                                        size="small" 
-                                        className="text-sm border-none"
-                                        globalFilter={metaFilter}
-                                        globalFilterFields={['property', 'value']}
-                                        emptyMessage="No metadata found."
-                                    >
-                                        <Column field="property" header="Property" className="font-semibold text-600 w-4"></Column>
-                                        <Column field="value" header="Value"></Column>
-                                    </DataTable>
-                                ) : (
-                                    <div className="p-4 text-sm text-500 text-center mt-6">
-                                        No item selected
-                                    </div>
-                                )}
-                            </div>
-                        </SplitterPanel>
-                    </Splitter>
+                {/* Panel 2: Image Canvas with Toolbar */}
+                <div className="flex-1 flex flex-column h-full min-w-0 relative surface-ground z-1 overflow-hidden">
+                    <div className="h-4rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
+                        <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">
+                            {selectedNode ? selectedNode.label : 'No Selection'}
+                        </span>
+                        <div className="flex gap-1 align-items-center">
+                            <Tooltip target=".search-toolbar-btn" />
+                            <Button icon="pi pi-search-plus" className="search-toolbar-btn" onClick={handleZoomIn} rounded text severity="secondary" tooltip="Zoom In" disabled={!isImage} />
+                            <Button icon="pi pi-search-minus" className="search-toolbar-btn" onClick={handleZoomOut} rounded text severity="secondary" tooltip="Zoom Out" disabled={!isImage} />
+                            <div className="w-1px h-2rem bg-300 mx-1"></div>
+                            <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} disabled={!isImage} />
+                            <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" disabled={!isImage} />
+                            <div className="w-1px h-2rem bg-300 mx-1"></div>
+                            <Button icon="pi pi-arrows-alt" className="search-toolbar-btn" onClick={handleFitScreen} rounded text severity="secondary" tooltip="Reset View" disabled={!isImage} />
+                            <div className="w-1px h-2rem bg-300 mx-1"></div>
+                            <Button icon="pi pi-print" className="search-toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" disabled={!isImage} />
+                            <Button icon="pi pi-download" className="search-toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" disabled={!isImage} />
+                            <div className="w-1px h-2rem bg-300 mx-1"></div>
+                            <Button icon={`pi ${showMetadata ? 'pi-eye-slash' : 'pi-eye'}`} className="search-toolbar-btn" onClick={() => setShowMetadata(!showMetadata)} rounded text severity={showMetadata ? 'primary' : 'secondary'} tooltip={showMetadata ? 'Hide Metadata' : 'Show Metadata'} />
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-hidden relative surface-100">
+                            {renderCenterContent()}
+                    </div>
                 </div>
-            )}
+
+                {/* Panel 3: Metadata */}
+                {showMetadata && (
+                    <div className="w-18rem md:w-20rem flex flex-column border-left-1 border-200 h-full flex-shrink-0 bg-surface-0 overflow-hidden">
+                        <div className="p-2 surface-ground border-bottom-1 border-200 font-medium text-700 flex flex-column gap-2">
+                            <div className="flex justify-content-between align-items-center">
+                                <span>Metadata</span>
+                                <Button icon="pi pi-times" rounded text size="small" severity="secondary" onClick={() => setShowMetadata(false)} />
+                            </div>
+                            <span className="p-input-icon-left w-full">
+                                <i className="pi pi-search text-400" />
+                                <InputText 
+                                    value={metaFilter} 
+                                    onChange={(e) => setMetaFilter(e.target.value)} 
+                                    placeholder="Filter..." 
+                                    className="w-full p-inputtext-sm" 
+                                />
+                            </span>
+                        </div>
+                        <div className="flex-1 overflow-auto custom-scrollbar">
+                            {selectedNode && selectedNode.data ? (
+                                <DataTable 
+                                    value={(selectedNode.data as NodeData).metadata} 
+                                    stripedRows 
+                                    size="small" 
+                                    className="text-sm border-none"
+                                    globalFilter={metaFilter}
+                                    globalFilterFields={['property', 'value']}
+                                    emptyMessage="No metadata found."
+                                >
+                                    <Column field="property" header="Property" className="font-semibold text-600 w-4"></Column>
+                                    <Column field="value" header="Value"></Column>
+                                </DataTable>
+                            ) : (
+                                <div className="p-4 text-sm text-500 text-center mt-6">
+                                    No item selected
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     </div>
   );
