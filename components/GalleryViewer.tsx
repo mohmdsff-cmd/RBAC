@@ -7,16 +7,21 @@ import { InputText } from 'primereact/inputtext';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Galleria, GalleriaResponsiveOptions } from 'primereact/galleria';
 import FileSaver from 'file-saver';
-import { EmbedPDF } from './EmbedPDF';
-import { mockFetchContent, mockFetchMetadata, mockFetchGalleryItems, GalleryItem, GalleryMetadataItem } from '../services/mockApi';
+import { GalleryMetadataItem } from '../services/mockApi';
+import { useDocumentContent } from '../services/apiService';
+
+export interface GalleryItem {
+    id: string | number;
+    thumbnail?: string;
+    title: string;
+    type: string;
+    description?: string;
+}
 
 export interface GalleryViewerProps {
     documentId: string | number;
     metadata?: GalleryMetadataItem[];
     showInfo?: boolean; 
-    onFetchItems?: (id: string | number) => Promise<GalleryItem[]>;
-    onFetchContent?: (id: string | number) => Promise<{ base64: string; mimeType: string }>;
-    onFetchMetadata?: (id: string | number) => Promise<GalleryMetadataItem[]>;
     className?: string;
     style?: React.CSSProperties;
 }
@@ -25,14 +30,11 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     documentId,
     metadata: propMetadata,
     showInfo = true,
-    onFetchItems = mockFetchGalleryItems,
-    onFetchContent = mockFetchContent,
-    onFetchMetadata = mockFetchMetadata,
     className,
     style
 }) => {
-    const [localItems, setLocalItems] = useState<GalleryItem[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [pageNumber, setPageNumber] = useState(1);
     
     // View State
     const [zoom, setZoom] = useState(1);
@@ -40,14 +42,31 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     const [showInfoPanel, setShowInfoPanel] = useState(showInfo);
     const [metaFilter, setMetaFilter] = useState('');
     
-    // Data Loading State
-    const [isItemsLoading, setIsItemsLoading] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [contentData, setContentData] = useState<{ base64: string; mimeType: string } | null>(null);
-    const [metaData, setMetaData] = useState<GalleryMetadataItem[]>([]);
+    // React Query for Data Fetching
+    const { data: documentContent, isLoading, error, isError, refetch } = useDocumentContent(documentId);
 
     const galleriaRef = useRef<Galleria>(null);
     const thumbnailScrollRef = useRef<HTMLDivElement>(null);
+
+    // Map API Response to Gallery Items
+    const localItems: GalleryItem[] = React.useMemo(() => {
+        if (!documentContent) return [];
+        
+        return documentContent.pages.map((base64Str, index) => {
+             // Ensure data URI prefix is present
+             const src = base64Str.startsWith('data:') 
+             ? base64Str 
+             : `data:image/${documentContent.type};base64,${base64Str}`;
+
+             return {
+                id: `${documentId}-pg${index + 1}`,
+                title: `${documentContent.fileName} - Page ${index + 1}`,
+                type: documentContent.type,
+                thumbnail: src,
+                description: `Page ${index + 1} of ${documentContent.pages.length}`
+            };
+        });
+    }, [documentContent, documentId]);
 
     const responsiveOptions: GalleriaResponsiveOptions[] = [
         { breakpoint: '1024px', numVisible: 5 },
@@ -59,6 +78,18 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         setShowInfoPanel(showInfo);
     }, [showInfo]);
 
+    // Sync activeIndex with PageNumber
+    useEffect(() => {
+        setPageNumber(activeIndex + 1);
+    }, [activeIndex]);
+
+    // Reset view state when document changes
+    useEffect(() => {
+        setActiveIndex(0);
+        setZoom(1);
+        setRotation(0);
+    }, [documentId]);
+
     // Scroll active thumbnail into view
     useEffect(() => {
         if (thumbnailScrollRef.current) {
@@ -67,67 +98,9 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             }
         }
-    }, [activeIndex]);
-
-    useEffect(() => {
-        const fetchItems = async () => {
-            setIsItemsLoading(true);
-            try {
-                const items = await onFetchItems(documentId);
-                setLocalItems(items);
-                setActiveIndex(0);
-            } catch (error) {
-                console.error("Failed to fetch gallery items", error);
-                setLocalItems([]);
-            } finally {
-                setIsItemsLoading(false);
-            }
-        };
-        fetchItems();
-    }, [documentId, onFetchItems]);
+    }, [activeIndex, localItems.length]); // Added localItems dependency to ensure ref update
 
     const activeItem = localItems[activeIndex];
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const loadData = async () => {
-            if (!activeItem) return;
-
-            setIsLoading(true);
-            setZoom(1);
-            setRotation(0);
-            setContentData(null);
-            
-            if (propMetadata) {
-                setMetaData(propMetadata);
-            } else {
-                setMetaData([]);
-            }
-
-            try {
-                const [content, fetchedDetails] = await Promise.all([
-                    onFetchContent(activeItem.id),
-                    propMetadata ? Promise.resolve(null) : onFetchMetadata(activeItem.id)
-                ]);
-
-                if (isMounted) {
-                    setContentData(content);
-                    if (fetchedDetails) {
-                        setMetaData(fetchedDetails);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to load secure content", error);
-            } finally {
-                if (isMounted) setIsLoading(false);
-            }
-        };
-
-        loadData();
-
-        return () => { isMounted = false; };
-    }, [activeItem, onFetchContent, onFetchMetadata, propMetadata]);
 
     const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.25, 10));
     const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.25, 0.1));
@@ -135,98 +108,59 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     const handleRotateCcw = () => setRotation((prev) => prev - 90);
     const handleFitScreen = () => { setZoom(1); setRotation(0); };
 
-    // Helper to extract raw base64 if data URI scheme is present
-    const getCleanBase64 = (base64: string) => {
-        return base64.includes('base64,') ? base64.split('base64,')[1] : base64;
-    };
-
-    // Helper to get full data URI for images
-    const getImageSrc = (base64: string, mimeType: string) => {
-        return base64.startsWith('data:') ? base64 : `data:${mimeType};base64,${base64}`;
-    };
-
     const handlePrint = () => {
-        if (!contentData) return;
+        if (!activeItem || !activeItem.thumbnail) return;
         
-        if (contentData.mimeType === 'application/pdf') {
-             // For PDF, convert to blob URL and open
-            const cleanBase64 = getCleanBase64(contentData.base64);
-            const byteCharacters = atob(cleanBase64);
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                    <head><title>Print ${activeItem.title}</title></head>
+                    <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background-color: #fff;">
+                        <img src="${activeItem.thumbnail}" style="max-width:100%; max-height:100%; transform: rotate(${rotation}deg);" />
+                        <script>
+                            window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
+                        </script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    };
+
+    const handleDownload = () => {
+        if (!activeItem || !activeItem.thumbnail) return;
+        
+        try {
+            const base64Data = activeItem.thumbnail.split(',')[1];
+            const byteCharacters = atob(base64Data);
             const byteNumbers = new Array(byteCharacters.length);
             for (let i = 0; i < byteCharacters.length; i++) {
                 byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
             const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'application/pdf' });
-            const url = URL.createObjectURL(blob);
-            const win = window.open(url, '_blank');
-            if (win) {
-                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }
-        } else {
-            const src = getImageSrc(contentData.base64, contentData.mimeType);
-            const printWindow = window.open('', '_blank');
-            if (printWindow) {
-                printWindow.document.write(`
-                    <html>
-                        <head><title>Print Asset</title></head>
-                        <body style="margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background-color: #eee;">
-                            <img src="${src}" style="max-width:100%; max-height:100%; transform: rotate(${rotation}deg);" />
-                            <script>
-                                window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }
-                            </script>
-                        </body>
-                    </html>
-                `);
-                printWindow.document.close();
-            }
+            const blob = new Blob([byteArray], { type: `image/${activeItem.type}` });
+            
+            FileSaver.saveAs(blob, `${activeItem.title}.${activeItem.type}`);
+        } catch (e) {
+            console.error("Download failed", e);
         }
-    };
-
-    const handleDownload = () => {
-        if (!contentData || !activeItem) return;
-        
-        const cleanBase64 = getCleanBase64(contentData.base64);
-        const byteCharacters = atob(cleanBase64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: contentData.mimeType });
-        
-        FileSaver.saveAs(blob, activeItem.title || 'document');
     };
 
     const itemTemplate = (item: GalleryItem) => {
-        const isActive = item.id === activeItem?.id;
-
-        if (!isActive || isLoading) {
+        if (isLoading) {
             return (
                 <div className="flex flex-column align-items-center justify-content-center h-full w-full bg-surface-0">
                     <ProgressSpinner style={{width: '40px', height: '40px'}} strokeWidth="3" />
-                    <span className="text-400 text-xs mt-3 font-medium uppercase tracking-widest">Handshake...</span>
+                    <span className="text-400 text-xs mt-3 font-medium uppercase tracking-widest">Rendering Page...</span>
                 </div>
             );
         }
 
-        if (!contentData) {
+        if (!item || !item.thumbnail) {
             return (
                 <div className="flex align-items-center justify-content-center h-full w-full bg-surface-50 text-400">
-                    <i className="pi pi-lock mr-2 text-xl"></i> Secure Access Only
-                </div>
-            );
-        }
-
-        if (contentData.mimeType === 'application/pdf') {
-            const cleanBase64 = getCleanBase64(contentData.base64);
-            return (
-                <div className="w-full h-full bg-surface-0 overflow-hidden">
-                    <EmbedPDF 
-                        data={cleanBase64} 
-                        fileName={item.title}
-                        className="border-none shadow-none"
-                    />
+                    <i className="pi pi-image mr-2 text-xl"></i> No Image Data
                 </div>
             );
         }
@@ -243,11 +177,15 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                         justifyContent: 'center'
                      }}>
                     <img 
-                        src={getImageSrc(contentData.base64, contentData.mimeType)} 
-                        alt="" 
+                        src={item.thumbnail} 
+                        alt={item.title} 
                         className="shadow-5 border-round-sm"
                         style={{ 
-                            width: zoom === 1 ? 'auto' : `${zoom * 100}%`,
+                            // Optimized for both tiny mock images and large documents
+                            // zoom=1 : Fit to Screen (Both Dimensions)
+                            // zoom!=1 : Scale Width (Overflow Scroll)
+                            width: zoom === 1 ? '100%' : `${zoom * 100}%`,
+                            height: zoom === 1 ? '100%' : 'auto',
                             maxWidth: zoom === 1 ? '100%' : 'none',
                             maxHeight: zoom === 1 ? '100%' : 'none',
                             objectFit: 'contain'
@@ -262,10 +200,10 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         <div className="flex flex-wrap align-items-center justify-content-between px-3 py-2 surface-card border-bottom-1 border-200 z-5 shadow-1 gap-2">
             <div className="flex flex-column">
                 <span className="font-bold text-700 text-sm">{activeItem?.title || 'Unknown Asset'}</span>
+                <span className="text-xs text-500">Page {pageNumber} of {localItems.length || 0}</span>
             </div>
 
             <div className="flex gap-2 align-items-center">
-                 {/* Zoom Controls */}
                 <div className="flex align-items-center bg-surface-50 border-1 border-200 border-round-lg shadow-sm overflow-hidden h-2rem">
                     <Button icon="pi pi-minus" onClick={handleZoomOut} size="small" text severity="secondary" className="p-1 h-full w-2rem" />
                     <span className="px-2 text-xs font-bold text-700 border-x-1 border-200 select-none min-w-3rem text-center bg-surface-0 h-full flex align-items-center justify-content-center">
@@ -276,13 +214,11 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 </div>
                 <div className="w-1px h-2rem bg-300 mx-1"></div>
                 
-                {/* Rotations */}
                 <Button icon="pi pi-refresh" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} />
                 <Button icon="pi pi-refresh" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
                 
                 <div className="w-1px h-2rem bg-300 mx-1"></div>
 
-                {/* Actions */}
                 <Button icon="pi pi-print" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
                 <Button icon="pi pi-download" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" />
                 
@@ -293,11 +229,22 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         </div>
     );
 
-    if (isItemsLoading) {
+    if (isError) {
+        return (
+            <div className="flex flex-column align-items-center justify-content-center h-full surface-card gap-3 text-red-500">
+                <i className="pi pi-exclamation-circle text-3xl"></i>
+                <span className="font-bold">Error Loading Document</span>
+                <span className="text-sm">{(error as Error)?.message || 'Failed to fetch content'}</span>
+                <Button label="Retry" icon="pi pi-refresh" size="small" onClick={() => refetch()} />
+            </div>
+        );
+    }
+
+    if (isLoading) {
         return (
             <div className="flex flex-column align-items-center justify-content-center h-full surface-card gap-4">
                 <ProgressSpinner />
-                <span className="text-sm font-bold text-400 uppercase tracking-widest">Loading Secure Archives...</span>
+                <span className="text-sm font-bold text-400 uppercase tracking-widest">Fetching Document Pages...</span>
             </div>
         );
     }
@@ -309,11 +256,10 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     return (
         <div className={`flex flex-row h-full surface-card overflow-hidden ${className}`} style={style}>
             
-            {/* 1. Left Sidebar: Thumbnails with Top Pagination */}
+            {/* 1. Left Sidebar: Thumbnails */}
             <div className="w-6rem md:w-7rem bg-surface-100 border-right-1 border-200 flex-shrink-0 flex flex-column z-2">
-                {/* Pagination Header */}
                 <div className="p-2 flex flex-column gap-2 align-items-center bg-surface-50 border-bottom-1 border-200">
-                     <span className="text-xs font-bold text-600">FILES</span>
+                     <span className="text-xs font-bold text-600">PAGES</span>
                      <div className="flex align-items-center justify-content-between w-full gap-1">
                         <Button 
                             icon="pi pi-angle-left" 
@@ -324,7 +270,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                             disabled={activeIndex === 0}
                             onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
                         />
-                        <span className="text-xs font-semibold text-700">{activeIndex + 1} / {localItems.length}</span>
+                        <span className="text-xs font-semibold text-700">{pageNumber} / {localItems.length}</span>
                         <Button 
                             icon="pi pi-angle-right" 
                             text 
@@ -351,13 +297,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                             `}
                             style={{ height: 'auto', aspectRatio: '1/1' }}
                         >
-                            {item.thumbnail ? (
-                                <img src={item.thumbnail} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                                <div className="w-full h-full flex align-items-center justify-content-center bg-surface-0">
-                                    <i className={`pi ${item.type === 'pdf' ? 'pi-file-pdf text-red-500' : 'pi-image text-blue-500'} text-xl`}></i>
-                                </div>
-                            )}
+                            <img src={item.thumbnail} alt={`Page ${index + 1}`} className="w-full h-full object-cover" />
                             <div className="absolute top-0 right-0 bg-black-alpha-60 text-white text-xs px-1 border-bottom-left-radius-xs">
                                 {index + 1}
                             </div>
@@ -366,7 +306,7 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                 </div>
             </div>
 
-            {/* 2. Main Content Body (Viewer + Metadata) */}
+            {/* 2. Main Content Body */}
             <div className="flex-1 flex flex-column min-w-0 bg-surface-0 relative overflow-hidden">
                 <Galleria 
                     ref={galleriaRef}
@@ -406,26 +346,18 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                     </div>
 
                     <div className="flex-1 overflow-y-auto bg-surface-0">
-                            {isLoading ? (
-                            <div className="flex flex-column align-items-center justify-content-center h-12rem gap-3">
-                                <ProgressSpinner style={{width: '24px', height: '24px'}} strokeWidth="4" />
-                                <span className="text-xs text-400 font-bold uppercase tracking-tight text-center">Syncing Registry...</span>
-                            </div>
-                        ) : (
-                            <DataTable 
-                                value={metaData} 
-                                stripedRows 
-                                size="small" 
-                                className="text-xs p-datatable-sm border-none"
-                                globalFilter={metaFilter}
-                                globalFilterFields={['property', 'value']}
-                                emptyMessage="Registry empty."
-                                rowClassName={() => ({ 'vertical-align-top': true })}
-                            >
-                                <Column field="property" header="Property" className="font-bold text-700 w-6rem py-2 surface-50 px-3 border-bottom-1 border-100"></Column>
-                                <Column field="value" header="Value" className="text-600 py-2 px-3 border-bottom-1 border-100" body={(d) => <span className="word-break-all">{d.value}</span>}></Column>
-                            </DataTable>
-                        )}
+                         <DataTable 
+                            value={propMetadata || []} 
+                            stripedRows 
+                            size="small" 
+                            className="text-xs p-datatable-sm border-none"
+                            globalFilter={metaFilter}
+                            globalFilterFields={['property', 'value']}
+                            emptyMessage="Registry empty."
+                        >
+                            <Column field="property" header="Property" className="font-bold text-700 w-6rem py-2 surface-50 px-3 border-bottom-1 border-100"></Column>
+                            <Column field="value" header="Value" className="text-600 py-2 px-3 border-bottom-1 border-100" body={(d) => <span className="word-break-all">{d.value}</span>}></Column>
+                        </DataTable>
                     </div>
                 </div>
             )}

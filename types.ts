@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   USER = 'USER',
@@ -7,11 +8,20 @@ export enum UserRole {
   VIEW_SYSTEM = 'VIEW_SYSTEM'
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  region: string;
+  status: 'Active' | 'Inactive' | 'Onboarding';
+}
+
 export interface User {
   id: string;
   username: string;
+  operatorName?: string;
   roles: UserRole[];
   avatarUrl?: string;
+  clients?: Client[];
 }
 
 export interface AuthState {

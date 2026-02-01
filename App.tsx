@@ -13,11 +13,13 @@ import RangeReports from './pages/RangeReports';
 import Search from './pages/Search';
 import ActiveCases from './pages/ActiveCases';
 import Help from './pages/Help';
+import UserProfile from './pages/UserProfile';
 import Unauthorized from './pages/Unauthorized';
 import NotificationsPage from './pages/NotificationsPage';
 import UploadPortal from './pages/UploadPortal';
 import EvidenceSubmission from './pages/EvidenceSubmission';
 import LoginPage from './pages/LoginPage';
+import DisputeAccountSearch from './pages/DisputeAccountSearch';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
 import { ProgressSpinner } from 'primereact/progressspinner';
@@ -107,6 +109,16 @@ const App: React.FC = () => {
             } 
           />
 
+          {/* Protected Routes: Dispute Account Search */}
+          <Route 
+            path="/account-lookup" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <DisputeAccountSearch />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Protected Routes: Active Cases */}
           <Route 
             path="/active-cases" 
@@ -143,6 +155,16 @@ const App: React.FC = () => {
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_REPORTS, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM, UserRole.GUEST]}>
                 <Help />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: User Profile */}
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_REPORTS, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM, UserRole.GUEST]}>
+                <UserProfile />
               </ProtectedRoute>
             } 
           />

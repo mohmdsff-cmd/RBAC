@@ -50,9 +50,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       else if (path === '/reports') { title = "Daily Reports"; icon = "pi-chart-bar"; color = "purple"; }
       else if (path === '/active-cases') { title = "Case Queue"; icon = "pi-briefcase"; color = "green"; }
       else if (path === '/search') { title = "Secure Search"; icon = "pi-search"; color = "indigo"; }
+      else if (path === '/account-lookup') { title = "Account Lookup"; icon = "pi-id-card"; color = "indigo"; }
       else if (path === '/notifications') { title = "Audit Log"; icon = "pi-list"; color = "blue"; }
       else if (path === '/upload') { title = "Upload Portal"; icon = "pi-upload"; color = "teal"; }
       else if (path === '/evidence') { title = "Evidence Locker"; icon = "pi-lock"; color = "teal"; }
+      else if (path === '/profile') { title = "User Profile"; icon = "pi-user"; color = "blue"; }
 
       dispatch(toggleBookmark({
           id: `BK-${Date.now()}`,
@@ -68,11 +70,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     {
         label: 'Account Info',
         template: (item) => (
-            <div className="p-3 flex align-items-center gap-3 w-16rem">
+            <div className="p-3 flex align-items-center gap-3 w-16rem cursor-pointer" onClick={() => navigate('/profile')}>
                 <Avatar image={user?.avatarUrl} shape="circle" size="large" className="shadow-1" />
                 <div className="flex flex-column overflow-hidden">
                     <span className="font-bold text-900 text-overflow-ellipsis overflow-hidden white-space-nowrap">
-                        {user?.username}
+                        {user?.operatorName || user?.username}
                     </span>
                     <span className="text-xs text-500 font-medium">Resolution Agent ID: {user?.id}</span>
                 </div>
@@ -81,12 +83,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     },
     { separator: true },
     { 
-        label: 'Performance Profile', 
+        label: 'User Profile', 
         icon: 'pi pi-user', 
+        command: () => navigate('/profile')
+    },
+    { 
+        label: 'Help & Manuals', 
+        icon: 'pi pi-question-circle', 
         command: () => navigate('/help')
     },
     { 
-        label: 'Settings', 
+        label: 'Theme Settings', 
         icon: 'pi pi-cog', 
         command: () => setShowSettings(true)
     },
@@ -111,6 +118,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     label: 'Active Workstreams',
                     items: [
                         { label: 'Dispute Dashboard', icon: 'pi pi-chart-bar', command: () => navigate('/dashboard') },
+                        { label: 'Account Lookup', icon: 'pi pi-id-card', command: () => navigate('/account-lookup') },
                         { label: 'Chargeback Lookup', icon: 'pi pi-search', command: () => navigate('/search') },
                         { label: 'Network Pending', icon: 'pi pi-list', command: () => navigate('/active-cases') }
                     ]
@@ -209,7 +217,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
             <Avatar image={user.avatarUrl} shape="circle" size="normal" className="surface-200 shadow-sm" />
             <div className="hidden lg:flex flex-column text-left">
-                <span className="text-xs font-bold text-900 line-height-1 mb-1">{user.username}</span>
+                <span className="text-xs font-bold text-900 line-height-1 mb-1">{user.operatorName || user.username}</span>
                 <span className="text-xs text-500 font-medium">Session Active</span>
             </div>
             <i className="pi pi-chevron-down text-xs text-400 ml-1"></i>

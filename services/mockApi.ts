@@ -1,15 +1,22 @@
 
+
 export interface SearchCriteria {
     term?: string;
     amount?: number | null;
     cardNumber?: string;
+    merchant?: string;
+    status?: string | null;
+    reasonCode?: string | null;
+    agent?: string;
+    timeRange?: string | null;
+    priority?: string | null;
 }
 
 export interface GalleryItem {
     id: string | number;
     thumbnail?: string;
     title: string;
-    type: 'image' | 'pdf' | 'document';
+    type: 'image' | 'pdf' | 'document' | 'png';
     description?: string;
 }
 
@@ -26,6 +33,55 @@ export interface CaseSummary {
     updated: string;
 }
 
+// --- NEW INTERFACES FOR DISPUTE ACCOUNT SEARCH ---
+
+export interface AccountHistory {
+    date: string;
+    status: string;
+    user: string;
+    description: string;
+}
+
+export interface CaseNote {
+    id: string;
+    date: string;
+    author: string;
+    note: string;
+}
+
+export interface CaseDocument {
+    id: string;
+    name: string;
+    type: string;
+    date: string;
+    size: string;
+}
+
+export interface DisputeAccount {
+    accountId: string;
+    disputeId: string;
+    customerName: string;
+    email: string;
+    phone: string;
+    currentStatus: string;
+    riskScore: number;
+    transactionAmount: number;
+    merchant: string;
+    history: AccountHistory[];
+    notes: CaseNote[];
+    documents: CaseDocument[];
+}
+
+// Mock Data for Base64 PNGs
+const MOCK_PNG_RESPONSE_DATA = [
+    // 1. Simple Grey/White Pattern
+    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABTSURBVGhD7c6xCQAgDETR5O6/sLqCiK3g8xTE8hXyEZfT3j33u/c+x8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8x83w0m1hW9X30v8AAAAABJRU5ErkJggg==",
+    // 2. Simple Blue Pattern
+    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABVSURBVGhD7c4xDQAxEETR5h8yUECqgCoqYH8K4p5C/uJ62r3nfvfe55iZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ77sBmn4V/e0jK0UAAAAASUVORK5CYII=",
+    // 3. Simple Red Pattern
+    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABVSURBVGhD7c6hDQAxEETR9h8yUECqgCoqYH8K4p5C/uJ62r3nfvfe55iZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ77sBnHQV/dD9WkAAAAAASUVORK5CYII="
+];
+
 export const mockFetchCases = async (): Promise<CaseSummary[]> => {
     await new Promise(resolve => setTimeout(resolve, 600));
     return [
@@ -39,42 +95,49 @@ export const mockFetchCases = async (): Promise<CaseSummary[]> => {
 
 export const mockFetchGalleryItems = async (documentId: string | number): Promise<GalleryItem[]> => {
     await new Promise(resolve => setTimeout(resolve, 600));
+
+    // Simulate API Response: { type: 'png', data: [...] }
+    const apiResponse = {
+        type: 'png',
+        data: MOCK_PNG_RESPONSE_DATA
+    };
     
-    return [
-        {
-            id: 'sample-hq-1',
-            title: 'Primary Forensic Capture',
-            type: 'image',
-            thumbnail: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=200&h=200&auto=format&fit=crop',
-            description: 'Ultra-high resolution laboratory scan of biological sample 404.'
-        },
-        {
-            id: 'sample-hq-2',
-            title: 'Case Summary PDF',
-            type: 'pdf',
-            description: 'Encrypted document containing final verdict and evidence chain.'
-        },
-        ...Array.from({ length: 12 }, (_, i): GalleryItem => ({
-            id: `asset-${documentId}-${i}`,
-            title: `Asset ${100 + i}`,
-            type: (i + 1) % 4 === 0 ? 'pdf' : 'image',
-            thumbnail: (i + 1) % 4 === 0 ? undefined : `https://picsum.photos/200/200?random=${i + 500}`,
-            description: 'Vault archive record'
-        }))
-    ];
+    // Map response to application model
+    return apiResponse.data.map((base64Str, index) => ({
+        id: `api-png-${documentId}-${index}`,
+        title: `Evidence Capture ${index + 1}`,
+        type: 'png',
+        thumbnail: `data:image/png;base64,${base64Str}`,
+        description: 'Direct Base64 Stream Source'
+    }));
 };
 
 export const mockFetchContent = async (id: string | number): Promise<{ base64: string; mimeType: string }> => {
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     const idStr = String(id);
+
+    // --- HANDLE NEW PNG API DATA ---
+    if (idStr.startsWith('api-png-')) {
+        // Extract index from ID "api-png-DOCID-INDEX"
+        const parts = idStr.split('-');
+        const index = parseInt(parts[parts.length - 1] || '0');
+        const safeIndex = index % MOCK_PNG_RESPONSE_DATA.length;
+        
+        return {
+            base64: MOCK_PNG_RESPONSE_DATA[safeIndex],
+            mimeType: 'image/png'
+        };
+    }
+
+    // --- EXISTING PDF / GENERIC LOGIC ---
     // Identify PDF if ID contains 'pdf', is the specific HQ sample, or follows the generated asset index pattern
     const isAssetPdf = idStr.startsWith('asset-') && (parseInt(idStr.split('-').pop() || '0') + 1) % 4 === 0;
     const isPdf = idStr.includes('pdf') || idStr.includes('sample-hq-2') || isAssetPdf;
 
     if (isPdf) {
-        // A minimal valid 1-page PDF base64 (Fixed: Removed invalid '.' character from previous version)
+        // A minimal valid 1-page PDF base64
         const dummyPdfBase64 = "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwogIC9QYWdlcyAyIDAgUgo+PgRlbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXwKICAvTWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0KPj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAgL1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSCiAgICA+PgogID4+CiAgL0NvbnRlbnRzIDUgMCBSCj4+CmVuZG9iagoKNCAwIG9iago8PAogIC9UeXBlIC9Gb250CiAgL1N1YnR5cGUgL1R5cGUxCiAgL0Jhc2VGb250IC9UaW1lcy1Sb21hbgo+PgRlbmRvYmoKCjUgMCBvYmoKICA8PCAvTGVuZ3RoIDQ0ID4+CnN0cmVhbQpCVAo3MCA1MCBUZAovRjEgMTIgVGYKKEhlbGxvLCB0aGlzIGlzIGEgUERGIGRvY3VtZW50LikgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4gCjAwMDAwMDAwNjAgMDAwMDAgbiAKMDAwMDAwMDE1NyAwMDAwMCBuIAowMDAwMDAwMjU1IDAwMDAwIG4gCjAwMDAwMDAzNjIgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9vdCAxIDAgUgo+PgpzdGFydHhyZWYKNDU5CiUlRU9GCg==";
         return { base64: dummyPdfBase64, mimeType: 'application/pdf' };
     } else {
@@ -119,13 +182,45 @@ export const searchActiveCases = async (criteria: SearchCriteria): Promise<any[]
         return {
             id: `CS-${idBase}-${i}`,
             subject: `Investigation relating to ${criteria.term || 'Unknown'}`,
-            assignee: ['Officer K.', 'Det. Miller', 'Agent Smith'][i % 3],
-            priority: i % 2 === 0 ? 'High' : 'Medium',
+            assignee: criteria.agent || ['Officer K.', 'Det. Miller', 'Agent Smith'][i % 3],
+            priority: criteria.priority || (i % 2 === 0 ? 'High' : 'Medium'),
             date: new Date().toLocaleDateString(),
-            status: 'Active',
+            status: criteria.status || 'Active',
             amount: criteria.amount || Math.floor(Math.random() * 10000),
             cardNumber: criteria.cardNumber || `**** **** **** ${1000 + i}`
         };
     });
     return results;
+};
+
+// --- MOCK FUNCTION FOR DISPUTE ACCOUNT SEARCH ---
+export const searchDisputeAccount = async (query: string): Promise<DisputeAccount | null> => {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    if (!query || query.trim().length < 2) return null;
+    
+    // Simulate finding data
+    return {
+        accountId: query.toUpperCase().startsWith('ACC') ? query.toUpperCase() : `ACC-${query.toUpperCase()}`,
+        disputeId: `DSP-${Math.floor(Math.random() * 100000)}`,
+        customerName: 'Alex Morgan',
+        email: 'alex.morgan@example.com',
+        phone: '+1 (555) 987-6543',
+        currentStatus: 'Under Review',
+        riskScore: 82,
+        transactionAmount: 450.25,
+        merchant: 'Global Electronics Ltd',
+        history: [
+            { date: '2023-10-07 10:15', status: 'Under Review', user: 'Sarah J.', description: 'Evidence received, review started' },
+            { date: '2023-10-06 14:20', status: 'Pending Info', user: 'System', description: 'Waiting for customer evidence' },
+            { date: '2023-10-05 09:00', status: 'New', user: 'System', description: 'Dispute created via API' }
+        ],
+        notes: [
+            { id: '1', date: '2023-10-07 10:20', author: 'Sarah J.', note: 'Customer provided clear proof of delivery failure. Contacting merchant.' },
+            { id: '2', date: '2023-10-08 09:00', author: 'System', note: 'Merchant notification email sent.' }
+        ],
+        documents: [
+            { id: 'd1', name: 'proof_of_delivery.pdf', type: 'Evidence', date: '2023-10-07', size: '2.4 MB' },
+            { id: 'd2', name: 'invoice_copy.jpg', type: 'Receipt', date: '2023-10-05', size: '1.1 MB' }
+        ]
+    };
 };
