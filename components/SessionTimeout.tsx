@@ -54,14 +54,16 @@ export const SessionTimeout: React.FC = () => {
     useEffect(() => {
         if (!isAuthenticated) return;
 
-        if (!localStorage.getItem(STORAGE_ACTIVITY_KEY)) {
-            localStorage.setItem(STORAGE_ACTIVITY_KEY, Date.now().toString());
-        }
+        // Force reset the activity timer when the user authenticates.
+        // This prevents stale timestamps from previous sessions causing an immediate logout loop.
+        const now = Date.now();
+        localStorage.setItem(STORAGE_ACTIVITY_KEY, now.toString());
+        lastUpdateRef.current = now;
 
         tickRef.current = window.setInterval(() => {
             const lastActivity = parseInt(localStorage.getItem(STORAGE_ACTIVITY_KEY) || '0');
-            const now = Date.now();
-            const idleTime = now - lastActivity;
+            const currentNow = Date.now();
+            const idleTime = currentNow - lastActivity;
 
             if (idleTime >= SESSION_TIMEOUT_MS) {
                 handleLogout(true);
@@ -77,7 +79,7 @@ export const SessionTimeout: React.FC = () => {
         return () => {
             if (tickRef.current) window.clearInterval(tickRef.current);
         };
-    }, [isAuthenticated, handleLogout, showWarning]);
+    }, [isAuthenticated, handleLogout]); // Dependency on isAuthenticated ensures this runs on login
 
     useEffect(() => {
         if (!isAuthenticated) return;

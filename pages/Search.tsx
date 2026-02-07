@@ -5,7 +5,6 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { Card } from 'primereact/card';
 import { TreeNode } from 'primereact/treenode';
 import { Tooltip } from 'primereact/tooltip';
 import { ContextMenu } from 'primereact/contextmenu';
@@ -47,7 +46,6 @@ const Search: React.FC = () => {
         setNodes(treeData);
 
         // Logic to auto-select the first image node if available
-        // We traverse specifically to look for the Mock Forensics data structure for demo
         let nodeToSelect: TreeNode | null = null;
         
         // Try to find first image in API 2 (Forensics)
@@ -71,12 +69,12 @@ const Search: React.FC = () => {
             setRotation(0);
         }
         
-        // If we have criteria and data came back, switch view
+        // If we have criteria and data came back, switch view logic handled by searched state
         if (activeCriteria && !searched) {
             setSearched(true);
         }
     }
-  }, [treeData, activeCriteria]); // Dependency on activeCriteria ensures this runs when search triggers
+  }, [treeData, activeCriteria]);
 
   const handleSearch = (criteria: SearchCriteria) => {
     // Basic validation
@@ -84,7 +82,7 @@ const Search: React.FC = () => {
     
     // Setting criteria triggers the React Query hook
     setActiveCriteria(criteria);
-    // Note: searched state will update in the useEffect when data arrives
+    setSearched(true);
   };
 
   const handleRefresh = () => {
@@ -275,151 +273,173 @@ const Search: React.FC = () => {
 
   const isImage = selectedNode?.data && (selectedNode.data as SearchNodeData).type === 'image';
 
-  // --- VIEW 1: Search Form Screen ---
-  if (!searched) {
-      return (
-        <div className="flex align-items-center justify-content-center h-full p-4 fadein animation-duration-500" style={{ minHeight: '80vh' }}>
-            <Card className="w-full max-w-5xl shadow-4 surface-card border-round-xl">
-                 <div className="flex flex-column gap-2 mb-4 text-center">
-                    <h1 className="text-3xl font-bold text-900 m-0">Global Data Search</h1>
-                    <p className="text-600 m-0">
-                        Query aggregated records across Police, Forensics, and Judiciary databases.
+  return (
+    <div className={`flex h-full gap-3 ${!searched ? 'justify-content-center align-items-center' : ''}`} style={{ height: 'calc(100vh - 8rem)' }}>
+        
+        {/* Left Sidebar / Main Search Container */}
+        <div className={`
+            flex flex-column surface-card border-round-xl shadow-1 border-1 border-200 overflow-hidden transition-all duration-500 ease-in-out
+            ${!searched ? 'w-full max-w-5xl h-auto shadow-4' : 'w-20rem h-full flex-shrink-0'}
+        `}>
+            <div className={`
+                border-bottom-1 border-200 bg-surface-50
+                ${!searched ? 'p-4' : 'p-3'}
+            `}>
+                <span className={`font-bold text-900 flex align-items-center ${!searched ? 'text-2xl' : 'text-lg'}`}>
+                    <i className={`pi pi-filter mr-2 text-primary ${!searched ? 'text-2xl' : ''}`}></i>
+                    {searched ? 'Query Builder' : 'Global Data Search'}
+                </span>
+                 {!searched && (
+                    <p className="text-600 m-0 mt-2 line-height-3">
+                        Use the query builder to search across Police Records, Forensics Lab data, and Judiciary Systems simultaneously.
                     </p>
-                </div>
-                
+                )}
+            </div>
+            <div className={`
+                overflow-y-auto custom-scrollbar flex-1
+                ${!searched ? 'p-4' : 'p-3'}
+            `}>
                 <AdvancedSearch 
                     onSearch={handleSearch} 
                     loading={loading || isFetching} 
-                    layout="grid"
-                    contextLabel="Execute Search"
-                    className="mt-4"
+                    layout={!searched ? 'grid' : 'vertical'}
+                    contextLabel="Search Records"
+                    className=""
                 />
-            </Card>
-        </div>
-      );
-  }
-
-  // --- VIEW 2: Results Screen ---
-  return (
-    <div className="flex flex-column h-full gap-3" style={{ height: 'calc(100vh - 8rem)' }}>
-        <ContextMenu model={menuModel} ref={cm} />
-        
-        {/* Results Toolbar */}
-        <div className="surface-card p-3 border-round-xl shadow-1 border-1 border-200 flex align-items-center justify-content-between shrink-0">
-            <div className="flex align-items-center gap-3">
-                 <Button icon="pi pi-arrow-left" rounded text severity="secondary" onClick={() => { setSearched(false); setActiveCriteria(null); }} tooltip="Back to Search" />
-                 <div className="flex flex-column">
-                    <span className="text-sm font-bold text-700 uppercase">Active Context</span>
-                    <span className="text-900 font-bold text-lg">{activeCriteria?.term || 'Complex Query'}</span>
-                 </div>
-                 {activeCriteria && (
-                    <div className="hidden md:flex gap-2 ml-4">
-                        {activeCriteria.status && <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 border-round">{activeCriteria.status}</span>}
-                        {activeCriteria.timeRange && <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 border-round">{activeCriteria.timeRange === 'all' ? 'All Time' : activeCriteria.timeRange}</span>}
-                        {activeCriteria.priority && <span className="text-xs px-2 py-1 bg-red-100 text-red-700 border-round">{activeCriteria.priority} Priority</span>}
-                    </div>
-                 )}
             </div>
-            <Button label="New Search" icon="pi pi-search" onClick={() => { setSearched(false); setActiveCriteria(null); }} size="small" />
         </div>
 
-        {/* 3-Pane Layout */}
-        <div className="flex-1 overflow-hidden flex h-full border-1 border-300 border-round-xl shadow-1 surface-card">
-             {/* Panel 1: Tree with Filter */}
-             <div className="w-18rem md:w-20rem flex flex-column border-right-1 border-200 h-full flex-shrink-0 bg-surface-0 overflow-hidden">
-                <div className="p-3 surface-ground border-bottom-1 border-200 font-medium text-700 flex justify-content-end align-items-center">
-                    <div className="flex gap-1">
-                        <Button icon="pi pi-angle-double-down" rounded text severity="secondary" tooltip="Expand All" onClick={() => toggleExpansion(true)} disabled={nodes.length === 0} />
-                        <Button icon="pi pi-angle-double-up" rounded text severity="secondary" tooltip="Collapse All" onClick={() => toggleExpansion(false)} disabled={nodes.length === 0} />
-                        <Button icon="pi pi-refresh" rounded text severity="secondary" tooltip="Refresh Data" onClick={handleRefresh} disabled={!activeCriteria || isFetching} iconPos="right" loading={isFetching} />
-                    </div>
-                </div>
-                <div className="flex-1 overflow-auto custom-scrollbar p-2">
-                        <Tree 
-                        value={nodes} 
-                        selectionMode="single" 
-                        selectionKeys={selectedNodeKey} 
-                        onSelectionChange={(e) => setSelectedNodeKey(e.value)}
-                        onSelect={onNodeSelect}
-                        onUnselect={onNodeUnselect}
-                        onContextMenu={onNodeContextMenu}
-                        metaKeySelection={false}
-                        filter 
-                        filterMode="lenient" 
-                        filterPlaceholder="Filter items..."
-                        className="w-full border-none p-0"
-                    />
-                </div>
-            </div>
-
-            {/* Panel 2: Image Canvas with Toolbar */}
-            <div className="flex-1 flex flex-column h-full min-w-0 relative surface-ground z-1 overflow-hidden">
-                <div className="h-4rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
-                    <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">
-                        {selectedNode ? selectedNode.label : 'No Selection'}
-                    </span>
-                    <div className="flex gap-1 align-items-center">
-                        <Tooltip target=".search-toolbar-btn" />
-                        <Button icon="pi pi-search-plus" className="search-toolbar-btn" onClick={handleZoomIn} rounded text severity="secondary" tooltip="Zoom In" disabled={!isImage} />
-                        <Button icon="pi pi-search-minus" className="search-toolbar-btn" onClick={handleZoomOut} rounded text severity="secondary" tooltip="Zoom Out" disabled={!isImage} />
-                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                        <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} disabled={!isImage} />
-                        <Button icon="pi pi-refresh" className="search-toolbar-btn" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" disabled={!isImage} />
-                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                        <Button icon="pi pi-arrows-alt" className="search-toolbar-btn" onClick={handleFitScreen} rounded text severity="secondary" tooltip="Reset View" disabled={!isImage} />
-                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                        <Button icon="pi pi-print" className="search-toolbar-btn" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" disabled={!isImage} />
-                        <Button icon="pi pi-download" className="search-toolbar-btn" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" disabled={!isImage} />
-                        <div className="w-1px h-2rem bg-300 mx-1"></div>
-                        <Button icon={`pi ${showMetadata ? 'pi-eye-slash' : 'pi-eye'}`} className="search-toolbar-btn" onClick={() => setShowMetadata(!showMetadata)} rounded text severity={showMetadata ? 'primary' : 'secondary'} tooltip={showMetadata ? 'Hide Metadata' : 'Show Metadata'} />
-                    </div>
-                </div>
-                <div className="flex-1 overflow-hidden relative surface-100">
-                        {renderCenterContent()}
-                </div>
-            </div>
-
-            {/* Panel 3: Metadata */}
-            {showMetadata && (
-                <div className="w-18rem md:w-20rem flex flex-column border-left-1 border-200 h-full flex-shrink-0 bg-surface-0 overflow-hidden">
-                    <div className="p-2 surface-ground border-bottom-1 border-200 font-medium text-700 flex flex-column gap-2">
-                        <div className="flex justify-content-between align-items-center">
-                            <span>Metadata</span>
-                            <Button icon="pi pi-times" rounded text size="small" severity="secondary" onClick={() => setShowMetadata(false)} />
+        {/* Right Content Area - Results (Only visible when searched) */}
+        {searched && (
+        <div className="flex-1 h-full min-w-0 flex flex-column fadein animation-duration-500">
+             <div className="flex flex-column h-full gap-3">
+                    <ContextMenu model={menuModel} ref={cm} />
+                    
+                    {/* Active Context Toolbar */}
+                    <div className="surface-card p-3 border-round-xl shadow-1 border-1 border-200 flex align-items-center justify-content-between shrink-0">
+                        <div className="flex align-items-center gap-3 overflow-hidden">
+                             <div className="flex flex-column overflow-hidden">
+                                <span className="text-xs font-bold text-700 uppercase">Current Search Context</span>
+                                <span className="text-900 font-bold text-lg white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                                    {activeCriteria?.term || 'Unspecified Query'}
+                                </span>
+                             </div>
+                             {activeCriteria && (
+                                <div className="hidden xl:flex gap-2 ml-4">
+                                    {activeCriteria.status && <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 border-round">{activeCriteria.status}</span>}
+                                    {activeCriteria.priority && <span className="text-xs px-2 py-1 bg-red-100 text-red-700 border-round">{activeCriteria.priority} Priority</span>}
+                                </div>
+                             )}
                         </div>
-                        <span className="p-input-icon-left w-full">
-                            <i className="pi pi-search text-400" />
-                            <InputText 
-                                value={metaFilter} 
-                                onChange={(e) => setMetaFilter(e.target.value)} 
-                                placeholder="Filter..." 
-                                className="w-full p-inputtext-sm" 
-                            />
-                        </span>
+                        <Button 
+                            label="Reset" 
+                            icon="pi pi-times" 
+                            onClick={() => { setSearched(false); setActiveCriteria(null); }} 
+                            size="small" 
+                            severity="secondary" 
+                            outlined
+                        />
                     </div>
-                    <div className="flex-1 overflow-auto custom-scrollbar">
-                        {selectedNode && selectedNode.data ? (
-                            <DataTable 
-                                value={(selectedNode.data as SearchNodeData).metadata} 
-                                stripedRows 
-                                size="small" 
-                                className="text-sm border-none"
-                                globalFilter={metaFilter}
-                                globalFilterFields={['property', 'value']}
-                                emptyMessage="No metadata found."
-                            >
-                                <Column field="property" header="Property" className="font-semibold text-600 w-4"></Column>
-                                <Column field="value" header="Value"></Column>
-                            </DataTable>
-                        ) : (
-                            <div className="p-4 text-sm text-500 text-center mt-6">
-                                No item selected
+
+                    {/* 3-Pane Result Layout */}
+                    <div className="flex-1 overflow-hidden flex border-1 border-300 border-round-xl shadow-1 surface-card">
+                         {/* Panel 1: Tree with Filter */}
+                         <div className="w-16rem md:w-18rem flex flex-column border-right-1 border-200 h-full flex-shrink-0 bg-surface-0 overflow-hidden">
+                            <div className="p-2 surface-ground border-bottom-1 border-200 font-medium text-700 flex justify-content-between align-items-center">
+                                <span className="text-xs font-bold ml-1">RESULTS</span>
+                                <div className="flex gap-1">
+                                    <Button icon="pi pi-angle-double-down" rounded text severity="secondary" size="small" tooltip="Expand" onClick={() => toggleExpansion(true)} disabled={nodes.length === 0} />
+                                    <Button icon="pi pi-angle-double-up" rounded text severity="secondary" size="small" tooltip="Collapse" onClick={() => toggleExpansion(false)} disabled={nodes.length === 0} />
+                                    <Button icon="pi pi-refresh" rounded text severity="secondary" size="small" tooltip="Reload" onClick={handleRefresh} disabled={!activeCriteria || isFetching} loading={isFetching} />
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-auto custom-scrollbar p-2">
+                                    <Tree 
+                                    value={nodes} 
+                                    selectionMode="single" 
+                                    selectionKeys={selectedNodeKey} 
+                                    onSelectionChange={(e) => setSelectedNodeKey(e.value)}
+                                    onSelect={onNodeSelect}
+                                    onUnselect={onNodeUnselect}
+                                    onContextMenu={onNodeContextMenu}
+                                    metaKeySelection={false}
+                                    filter 
+                                    filterMode="lenient" 
+                                    filterPlaceholder="Filter..."
+                                    className="w-full border-none p-0 text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Panel 2: Image Canvas with Toolbar */}
+                        <div className="flex-1 flex flex-column h-full min-w-0 relative surface-ground z-1 overflow-hidden">
+                            <div className="h-3rem surface-overlay border-bottom-1 border-300 flex align-items-center justify-content-between px-3 shadow-1 z-2 flex-shrink-0">
+                                <span className="text-sm font-medium text-700 white-space-nowrap overflow-hidden text-overflow-ellipsis max-w-15rem">
+                                    {selectedNode ? selectedNode.label : 'No Selection'}
+                                </span>
+                                <div className="flex gap-1 align-items-center">
+                                    <Tooltip target=".search-toolbar-btn" />
+                                    <Button icon="pi pi-search-plus" className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={handleZoomIn} rounded text severity="secondary" tooltip="Zoom In" disabled={!isImage} />
+                                    <Button icon="pi pi-search-minus" className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={handleZoomOut} rounded text severity="secondary" tooltip="Zoom Out" disabled={!isImage} />
+                                    <div className="w-1px h-1rem bg-300 mx-1"></div>
+                                    <Button icon="pi pi-refresh" className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} disabled={!isImage} />
+                                    <Button icon="pi pi-refresh" className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" disabled={!isImage} />
+                                    <div className="w-1px h-1rem bg-300 mx-1"></div>
+                                    <Button icon="pi pi-arrows-alt" className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={handleFitScreen} rounded text severity="secondary" tooltip="Reset View" disabled={!isImage} />
+                                    <div className="w-1px h-1rem bg-300 mx-1"></div>
+                                    <Button icon="pi pi-download" className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" disabled={!isImage} />
+                                    <Button icon={`pi ${showMetadata ? 'pi-eye-slash' : 'pi-eye'}`} className="search-toolbar-btn p-button-sm w-2rem h-2rem" onClick={() => setShowMetadata(!showMetadata)} rounded text severity={showMetadata ? 'primary' : 'secondary'} tooltip={showMetadata ? 'Hide Metadata' : 'Show Metadata'} />
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-hidden relative surface-100">
+                                    {renderCenterContent()}
+                            </div>
+                        </div>
+
+                        {/* Panel 3: Metadata */}
+                        {showMetadata && (
+                            <div className="w-16rem md:w-18rem flex flex-column border-left-1 border-200 h-full flex-shrink-0 bg-surface-0 overflow-hidden">
+                                <div className="p-2 surface-ground border-bottom-1 border-200 font-medium text-700 flex flex-column gap-2">
+                                    <div className="flex justify-content-between align-items-center">
+                                        <span className="text-xs font-bold">METADATA</span>
+                                        <Button icon="pi pi-times" rounded text size="small" severity="secondary" className="w-2rem h-2rem" onClick={() => setShowMetadata(false)} />
+                                    </div>
+                                    <span className="p-input-icon-left w-full">
+                                        <i className="pi pi-search text-400 text-xs" />
+                                        <InputText 
+                                            value={metaFilter} 
+                                            onChange={(e) => setMetaFilter(e.target.value)} 
+                                            placeholder="Filter props..." 
+                                            className="w-full p-inputtext-sm text-sm" 
+                                        />
+                                    </span>
+                                </div>
+                                <div className="flex-1 overflow-auto custom-scrollbar">
+                                    {selectedNode && selectedNode.data ? (
+                                        <DataTable 
+                                            value={(selectedNode.data as SearchNodeData).metadata} 
+                                            stripedRows 
+                                            size="small" 
+                                            className="text-sm border-none"
+                                            globalFilter={metaFilter}
+                                            globalFilterFields={['property', 'value']}
+                                            emptyMessage="No metadata."
+                                        >
+                                            <Column field="property" header="Property" className="font-semibold text-600 w-5"></Column>
+                                            <Column field="value" header="Value"></Column>
+                                        </DataTable>
+                                    ) : (
+                                        <div className="p-4 text-sm text-500 text-center mt-6">
+                                            No item selected
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
-            )}
         </div>
+        )}
     </div>
   );
 };

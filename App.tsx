@@ -22,24 +22,20 @@ import LoginPage from './pages/LoginPage';
 import DisputeAccountSearch from './pages/DisputeAccountSearch';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
-import { ProgressSpinner } from 'primereact/progressspinner';
+// import { ProgressSpinner } from 'primereact/progressspinner'; // No longer needed for full page blocking
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { isLoading, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  // We no longer block the entire app rendering on isLoading to prevent Router unmounting during login actions
+  const { isLoading } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     // Attempt to fetch user profile on app load (Simulate SSO check)
     dispatch(fetchUserProfile());
   }, [dispatch]);
 
-  if (isLoading) {
-    return (
-      <div className="flex align-items-center justify-content-center min-h-screen surface-ground">
-        <ProgressSpinner />
-      </div>
-    );
-  }
+  // Removed the blocking loading check. 
+  // Loading states for actions like Login are now handled within the specific pages/components.
 
   return (
     <Router>

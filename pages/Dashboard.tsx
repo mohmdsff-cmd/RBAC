@@ -104,11 +104,11 @@ const Dashboard: React.FC = () => {
     <div className="grid">
       {/* Welcome Banner */}
       <div className="col-12 mb-4">
-          <div className="surface-card p-4 border-round-xl shadow-2 border-1 border-200 flex flex-column md:flex-row align-items-center justify-content-between">
+          <div className="bg-green-50 p-4 border-round-xl shadow-2 border-1 border-green-200 flex flex-column md:flex-row align-items-center justify-content-between">
               <h1 className="text-3xl font-bold text-900 m-0">Welcome back, {user?.username}</h1>
               <div className="flex gap-2 mt-3 md:mt-0">
-                  <Tag value="Visa Gateway Active" severity="info" />
-                  <Tag value="Mastercard Node Active" severity="warning" />
+                  <Tag value="Visa Gateway Active" className="bg-white text-blue-700 border-1 border-blue-100" />
+                  <Tag value="Mastercard Node Active" className="bg-white text-orange-700 border-1 border-orange-100" />
               </div>
           </div>
       </div>
