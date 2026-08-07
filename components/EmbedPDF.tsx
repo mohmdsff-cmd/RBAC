@@ -11,7 +11,7 @@ import { ScrollPanel } from 'primereact/scrollpanel';
 // Set worker for pdfjs using a stable CDN link that matches the dist
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs`;
 
-interface Redaction {
+export interface Redaction {
     id: string;
     page: number;
     x: number;

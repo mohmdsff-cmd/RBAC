@@ -10,6 +10,7 @@ import { Tag } from 'primereact/tag';
 import { searchDisputeAccount, DisputeAccount, AccountHistory } from '../services/mockApi';
 import { Message } from 'primereact/message';
 import { Badge } from 'primereact/badge';
+import { SecureAccountNumber } from '../components/SecureAccountNumber';
 
 const DisputeAccountSearch: React.FC = () => {
     const [query, setQuery] = useState('');
@@ -110,6 +111,14 @@ const DisputeAccountSearch: React.FC = () => {
                                     <li className="flex align-items-center py-3 px-2 border-top-1 border-bottom-1 border-100 flex-wrap">
                                         <div className="text-500 w-6 md:w-4 font-medium">Account ID</div>
                                         <div className="text-900 w-full md:w-8 md:flex-none">{account.accountId}</div>
+                                    </li>
+                                    <li className="flex align-items-center py-3 px-2 border-bottom-1 border-100 flex-wrap">
+                                        <div className="text-500 w-6 md:w-4 font-medium">Card Number</div>
+                                        <div className="text-900 w-full md:w-8 md:flex-none">
+                                            <SecureAccountNumber 
+                                                encryptedAccountNumber={account.encryptedAccountNumber} 
+                                            />
+                                        </div>
                                     </li>
                                     <li className="flex align-items-center py-3 px-2 border-bottom-1 border-100 flex-wrap">
                                         <div className="text-500 w-6 md:w-4 font-medium">Email</div>

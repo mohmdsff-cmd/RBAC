@@ -59,6 +59,7 @@ export interface CaseDocument {
 
 export interface DisputeAccount {
     accountId: string;
+    encryptedAccountNumber: string;
     disputeId: string;
     customerName: string;
     email: string;
@@ -75,11 +76,11 @@ export interface DisputeAccount {
 // Mock Data for Base64 PNGs
 const MOCK_PNG_RESPONSE_DATA = [
     // 1. Simple Grey/White Pattern
-    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABTSURBVGhD7c6xCQAgDETR5O6/sLqCiK3g8xTE8hXyEZfT3j33u/c+x8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8y8z8x83w0m1hW9X30v8AAAAABJRU5ErkJggg==",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
     // 2. Simple Blue Pattern
-    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABVSURBVGhD7c4xDQAxEETR5h8yUECqgCoqYH8K4p5C/uJ62r3nfvfe55iZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ77sBmn4V/e0jK0UAAAAASUVORK5CYII=",
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
     // 3. Simple Red Pattern
-    "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABVSURBVGhD7c6hDQAxEETR9h8yUECqgCoqYH8K4p5C/uJ62r3nfvfe55iZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ95mZ77sBnHQV/dD9WkAAAAAASUVORK5CYII="
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 ];
 
 export const mockFetchCases = async (): Promise<CaseSummary[]> => {
@@ -179,6 +180,10 @@ export const searchActiveCases = async (criteria: SearchCriteria): Promise<any[]
     await new Promise(resolve => setTimeout(resolve, 1000));
     const results = Array.from({ length: 5 }, (_, i) => {
         const idBase = criteria.term ? criteria.term.replace(/\D/g, '') : '999';
+        const lastFour = `10${i < 10 ? '0' + i : i}`;
+        // Generate a 16-digit "Encrypted" Token
+        const encrypted = `411111${Math.floor(100000 + Math.random() * 900000)}${lastFour}`;
+        
         return {
             id: `CS-${idBase}-${i}`,
             subject: `Investigation relating to ${criteria.term || 'Unknown'}`,
@@ -187,7 +192,7 @@ export const searchActiveCases = async (criteria: SearchCriteria): Promise<any[]
             date: new Date().toLocaleDateString(),
             status: criteria.status || 'Active',
             amount: criteria.amount || Math.floor(Math.random() * 10000),
-            cardNumber: criteria.cardNumber || `**** **** **** ${1000 + i}`
+            encryptedAccountNumber: encrypted // Tokenized PAN
         };
     });
     return results;
@@ -201,6 +206,7 @@ export const searchDisputeAccount = async (query: string): Promise<DisputeAccoun
     // Simulate finding data
     return {
         accountId: query.toUpperCase().startsWith('ACC') ? query.toUpperCase() : `ACC-${query.toUpperCase()}`,
+        encryptedAccountNumber: '4444339281921029', // Mock Encrypted Token
         disputeId: `DSP-${Math.floor(Math.random() * 100000)}`,
         customerName: 'Alex Morgan',
         email: 'alex.morgan@example.com',
@@ -223,4 +229,29 @@ export const searchDisputeAccount = async (query: string): Promise<DisputeAccoun
             { id: 'd2', name: 'invoice_copy.jpg', type: 'Receipt', date: '2023-10-05', size: '1.1 MB' }
         ]
     };
+};
+
+// --- NEW MOCK FOR DECRYPTING ACCOUNT NUMBER ---
+export const decryptAccountNumber = async (encryptedAccountNumber: string): Promise<string> => {
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Latency for "decryption"
+    
+    // Deterministic random generation based on input string to simulate decryption
+    let seed = 0;
+    for (let i = 0; i < encryptedAccountNumber.length; i++) {
+        seed += encryptedAccountNumber.charCodeAt(i);
+    }
+    
+    // Try to preserve BIN and Last 4 if input is 16 digits
+    let bin = "4000";
+    let lastFour = "0000";
+    
+    if (encryptedAccountNumber.length >= 16) {
+        bin = encryptedAccountNumber.substring(0, 4);
+        lastFour = encryptedAccountNumber.substring(encryptedAccountNumber.length - 4);
+    }
+    
+    // Generate distinct middle for "decrypted" effect (Reveal 8 digits in middle)
+    const middle = "12" + (seed % 90 + 10) + " " + (seed % 80 + 10); 
+    
+    return `${bin} ${middle} ${lastFour}`;
 };

@@ -1,0 +1,394 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+  --font-sans: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "Menlo", "Consolas", monospace;
+  
+  --apex-blue: #003399;
+  
+  /* For side navigation menu background */
+  --ut-side-nav-background-color: #242424; 
+  
+  /* For top header navigation branding background */
+  --ut-header-background-color: #1a1a1a; 
+  
+  /* Oracle APEX standard blue */
+  --color-primary: #003399;
+  --color-primary-hover: #0052cc;
+  --color-primary-active: #001f5c;
+  
+  --color-surface-50: #f8f9fa;
+  --color-surface-100: #f1f3f5;
+  --color-surface-200: #e9ecef;
+  --color-surface-300: #dee2e6;
+  --color-surface-400: #ced4da;
+  --color-surface-500: #adb5bd;
+  --color-surface-600: #6c757d;
+  --color-surface-700: #495057;
+  --color-surface-800: #343a40;
+  --color-surface-900: #212529;
+
+  --animate-fade-in: fade-in 0.4s ease-out forwards;
+  --animate-slide-up: slide-up 0.3s ease-out forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Base Styles */
+body {
+    font-family: var(--font-sans);
+    background-color: var(--color-surface-100);
+    color: var(--color-surface-900);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+}
+
+/* APEX Universal Theme Overrides for Professional Look */
+.p-component {
+    font-family: var(--font-sans);
+}
+
+.p-button {
+    transition: all 0.2s ease-in-out;
+    border-radius: 4px;
+}
+
+.p-button:not(.p-disabled):hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.p-card {
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    border: 1px solid var(--color-surface-300);
+    border-top: 3px solid var(--color-primary);
+}
+
+.p-inputtext, .p-dropdown, .p-inputtextarea {
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+}
+
+.p-inputtext:enabled:focus, .p-dropdown:not(.p-disabled).p-focus {
+    box-shadow: 0 0 0 1px var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+/* Data Table APEX Look */
+.p-datatable .p-datatable-thead > tr > th {
+    background: var(--color-surface-100);
+    color: var(--color-surface-900);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-surface-300);
+}
+
+.p-datatable .p-datatable-tbody > tr {
+    transition: background-color 0.2s;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+    background: var(--color-surface-50);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--color-surface-100);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--color-surface-400);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-surface-500);
+}
+
+/* Top accent bar layout */
+.top-accent-bar {
+    height: 5px;
+    width: 100%;
+    background: linear-gradient(90deg, #003399 0%, #0052cc 50%, #0078ff 100%);
+    position: relative;
+    z-index: 1010;
+}
+
+/* APEX specific utility class for headers */
+.apex-header {
+    background-color: #ffffff;
+    color: var(--color-surface-900);
+    border-bottom: 1px solid #D0D7E3;
+}
+
+/* ──── Oracle APEX Standard Menubar CSS Overrides ──── */
+.apex-menubar.p-menubar {
+    display: grid !important;
+    grid-template-columns: 220px 1fr auto !important;
+    align-items: center !important;
+    height: 56px !important;
+    padding: 0 1.5rem !important;
+    background-color: #ffffff !important;
+    border: none !important;
+    border-radius: 0px !important;
+    position: relative !important;
+    z-index: 1000 !important;
+    box-shadow: none !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-start {
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-root-list {
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 1rem !important;
+    background-color: transparent !important;
+    border: none !important;
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-end {
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+    margin-left: auto !important;
+}
+
+/* Navigation link level styles */
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem {
+    height: 56px !important;
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content {
+    background-color: transparent !important;
+    height: 100% !important;
+    border: none !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > .p-menuitem-link {
+    height: 100% !important;
+    padding: 0 1.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--color-surface-700) !important;
+    font-weight: 500 !important;
+    border-bottom: 3px solid transparent !important;
+    background-color: transparent !important;
+    border-radius: 0px !important;
+    transition: all 0.15s ease-in-out !important;
+    text-decoration: none !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content > .p-menuitem-link,
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-menuitem-content > .p-menuitem-link,
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem.p-highlight > .p-menuitem-content > .p-menuitem-link {
+    color: var(--apex-blue) !important;
+    border-bottom: 3px solid var(--apex-blue) !important;
+    background-color: transparent !important;
+}
+
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem:focus-within > .p-menuitem-content > .p-menuitem-link {
+    box-shadow: none !important;
+    background-color: transparent !important;
+}
+
+/* 3-Column Dropdown menus matching specifications exactly */
+.apex-menubar.p-menubar .p-submenu-list {
+    display: none !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    width: 780px !important;
+    max-width: calc(100vw - 2rem) !important;
+    padding: 1rem !important;
+    background-color: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid var(--color-surface-300) !important;
+    position: absolute !important;
+    top: 56px !important;
+    left: 0 !important;
+    z-index: 1020 !important;
+}
+
+@media (min-width: 769px) {
+    .apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem {
+        position: static !important;
+    }
+    .apex-menubar.p-menubar .p-submenu-list {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        right: auto !important;
+    }
+}
+
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-submenu-list,
+.apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem.p-menuitem-active > .p-submenu-list {
+    display: grid !important;
+}
+
+.apex-menubar.p-menubar .p-submenu-list > .p-menuitem {
+    width: 100% !important;
+}
+
+.apex-menubar.p-menubar .p-submenu-list > .p-menuitem > .p-menuitem-content {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Responsiveness fallback */
+@media (max-width: 768px) {
+    .apex-menubar.p-menubar {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        height: auto !important;
+        padding: 0.5rem 1rem !important;
+        flex-wrap: wrap !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-button {
+        display: flex !important;
+        order: 2 !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: var(--color-surface-700) !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 4px !important;
+        border: 1px solid var(--color-surface-300) !important;
+        background: #ffffff !important;
+        cursor: pointer !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-start {
+        order: 1 !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-end {
+        order: 3 !important;
+        margin-left: auto !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-root-list {
+        order: 4 !important;
+        width: 100% !important;
+        display: none !important;
+        flex-direction: column !important;
+        height: auto !important;
+        background-color: #ffffff !important;
+        border-top: 1px solid var(--color-surface-200) !important;
+        padding: 0.5rem 0 !important;
+        gap: 0.25rem !important;
+        margin-top: 0.5rem !important;
+    }
+    .apex-menubar.p-menubar.p-menubar-mobile-active .p-menubar-root-list {
+        display: flex !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem {
+        width: 100% !important;
+        height: auto !important;
+        align-items: flex-start !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem > .p-menuitem-content > .p-menuitem-link {
+        width: 100% !important;
+        padding: 0.75rem 1rem !important;
+        justify-content: flex-start !important;
+        border-bottom: none !important;
+        border-left: 3px solid transparent !important;
+    }
+    .apex-menubar.p-menubar .p-menubar-root-list > .p-menuitem:hover > .p-menuitem-content > .p-menuitem-link {
+        border-bottom: none !important;
+        border-left: 3px solid var(--apex-blue) !important;
+        background-color: var(--color-surface-50) !important;
+    }
+    .apex-menubar.p-menubar .p-submenu-list {
+        position: static !important;
+        width: 100% !important;
+        grid-template-columns: 1fr !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0.5rem !important;
+    }
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--color-surface-300);
+}
+
+/* ──── Oracle APEX Standard Rounding and Flat Region Design ──── */
+.border-round-xl,
+.border-round-2xl,
+.border-round-3xl {
+    border-radius: 4px !important;
+}
+
+.border-round-lg,
+.border-round-md {
+    border-radius: 4px !important;
+}
+
+/* Enhance PrimeReact tabview to look like high-contrast APEX Tabs */
+.p-tabview-nav {
+    background-color: var(--color-surface-100) !important;
+    border-bottom: 2px solid var(--color-surface-300) !important;
+    padding: 0 !important;
+    display: flex !important;
+    gap: 2px !important;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+    background: var(--color-surface-200) !important;
+    color: var(--color-surface-700) !important;
+    border: 1px solid var(--color-surface-300) !important;
+    border-bottom: none !important;
+    border-radius: 4px 4px 0 0 !important;
+    padding: 0.75rem 1.25rem !important;
+    font-weight: 500 !important;
+    transition: all 0.1s ease-in-out !important;
+}
+
+.p-tabview .p-tabview-nav li:not(.p-highlight):not(.p-disabled):hover .p-tabview-nav-link {
+    background: var(--color-surface-50) !important;
+    color: var(--color-surface-900) !important;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+    background: #ffffff !important;
+    color: var(--color-primary) !important;
+    border-top: 3px solid var(--color-primary) !important;
+    border-left: 1px solid var(--color-surface-300) !important;
+    border-right: 1px solid var(--color-surface-300) !important;
+    margin-top: -2px !important;
+    font-weight: 600 !important;
+}
+
+/* APEX region card structure and side labels styling */
+.surface-card {
+    background-color: #ffffff;
+    border: 1px solid var(--color-surface-300) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+}
+
+/* Standard APEX Sidebar style menu link item active highlights */
+.p-menuitem-active-custom {
+    border-left: 3px solid var(--color-primary);
+    background-color: var(--color-surface-100);
+}

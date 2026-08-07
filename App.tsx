@@ -12,14 +12,21 @@ import Reports from './pages/Reports';
 import RangeReports from './pages/RangeReports';
 import Search from './pages/Search';
 import ActiveCases from './pages/ActiveCases';
+import CaseDetail from './pages/CaseDetail';
 import Help from './pages/Help';
 import UserProfile from './pages/UserProfile';
 import Unauthorized from './pages/Unauthorized';
 import NotificationsPage from './pages/NotificationsPage';
 import UploadPortal from './pages/UploadPortal';
 import EvidenceSubmission from './pages/EvidenceSubmission';
+import DocumentMatching from './pages/DocumentMatching';
+import PendingItems from './pages/PendingItems';
+import PendingItemReview from './pages/PendingItemReview';
+import DocumentGenerator from './pages/DocumentGenerator';
 import LoginPage from './pages/LoginPage';
 import DisputeAccountSearch from './pages/DisputeAccountSearch';
+import PdfRedactionPage from './pages/PdfRedactionPage';
+import CaseManagementDashboard from './pages/CaseManagementDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
 // import { ProgressSpinner } from 'primereact/progressspinner'; // No longer needed for full page blocking
@@ -95,6 +102,54 @@ const App: React.FC = () => {
             } 
           />
 
+          {/* Protected Routes: Document Matching (New) */}
+          <Route 
+            path="/document-matching" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS]}>
+                <DocumentMatching />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Case Management Workspace (New) */}
+          <Route 
+            path="/case-management" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <CaseManagementDashboard />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Document Generator (New) */}
+          <Route 
+            path="/document-generator" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <DocumentGenerator />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Pending Items (New) */}
+          <Route 
+            path="/pending-items" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <PendingItems />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/pending-items/:id" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <PendingItemReview />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Protected Routes: Search */}
           <Route 
             path="/search" 
@@ -115,12 +170,32 @@ const App: React.FC = () => {
             } 
           />
 
+          {/* Protected Routes: Document Redaction */}
+          <Route 
+            path="/redact" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_DOCUMENTS, UserRole.VIEW_SYSTEM]}>
+                <PdfRedactionPage />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Protected Routes: Active Cases */}
           <Route 
             path="/active-cases" 
             element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_REPORTS, UserRole.VIEW_SYSTEM]}>
                 <ActiveCases />
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* Protected Routes: Case Detail */}
+          <Route 
+            path="/case/:id" 
+            element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.USER, UserRole.VIEW_REPORTS, UserRole.VIEW_SYSTEM]}>
+                <CaseDetail />
               </ProtectedRoute>
             } 
           />

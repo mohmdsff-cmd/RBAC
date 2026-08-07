@@ -21,23 +21,23 @@ const Search: React.FC = () => {
   };
 
   return (
-    <div className={`flex h-full gap-3 ${!searched ? 'justify-content-center align-items-center' : ''}`} style={{ height: 'calc(100vh - 8rem)' }}>
+    <div className={`flex gap-4 ${!searched ? 'align-items-center justify-content-center' : ''}`} style={{ height: searched ? 'calc(100vh - 12rem)' : 'auto' }}>
         
         {/* Left Sidebar / Main Search Container */}
         <div className={`
-            flex flex-column surface-card border-round-xl shadow-1 border-1 border-200 overflow-hidden transition-all duration-500 ease-in-out
-            ${!searched ? 'w-full max-w-5xl h-auto shadow-4' : 'w-20rem h-full flex-shrink-0'}
+            flex flex-column surface-card border-round-xl shadow-1 border-1 border-200 overflow-hidden transition-all transition-duration-500
+            ${!searched ? 'w-full max-w-5xl h-auto' : 'w-20rem h-full flex-shrink-0'}
         `}>
             <div className={`
-                border-bottom-1 border-200 bg-surface-50
+                border-bottom-1 border-100 surface-50
                 ${!searched ? 'p-4' : 'p-3'}
             `}>
                 <span className={`font-bold text-900 flex align-items-center ${!searched ? 'text-2xl' : 'text-lg'}`}>
-                    <i className={`pi pi-filter mr-2 text-primary ${!searched ? 'text-2xl' : ''}`}></i>
+                    <i className={`pi pi-filter mr-3 text-indigo-500 ${!searched ? 'text-2xl' : ''}`}></i>
                     {searched ? 'Query Builder' : 'Global Data Search'}
                 </span>
                  {!searched && (
-                    <p className="text-600 m-0 mt-2 line-height-3">
+                    <p className="text-500 m-0 mt-2 line-height-3 text-sm">
                         Use the query builder to search across Police Records, Forensics Lab data, and Judiciary Systems simultaneously.
                     </p>
                 )}

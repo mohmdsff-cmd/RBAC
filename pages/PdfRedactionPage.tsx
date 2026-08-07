@@ -1,72 +1,36 @@
-
-import React, { useState, useEffect } from 'react';
-import { EmbedPDF } from '../components/EmbedPDF';
-import { mockFetchContent } from '../services/mockApi';
-import { ProgressSpinner } from 'primereact/progressspinner';
-import { Toast } from 'primereact/toast';
+import React, { useState } from 'react';
+import { DocumentRedactor } from '../components/DocumentRedactor';
+import { Dropdown } from 'primereact/dropdown';
 
 const PdfRedactionPage: React.FC = () => {
-    const [pdfData, setPdfData] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const toast = React.useRef<any>(null);
+    const [selectedDocId, setSelectedDocId] = useState<string>('secure-redact-sample-pdf');
 
-    useEffect(() => {
-        const loadPdf = async () => {
-            try {
-                // Fetch a dummy PDF from our secure mock API
-                const response = await mockFetchContent('secure-redact-sample-pdf');
-                setPdfData(response.base64);
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadPdf();
-    }, []);
-
-    const handleSave = (redactions: any[]) => {
-        console.log("Saving redactions:", redactions);
-        toast.current?.show({ 
-            severity: 'success', 
-            summary: 'Redactions Saved', 
-            detail: `${redactions.length} regions have been flagged for secure masking.`,
-            life: 3000 
-        });
-    };
-
-    if (loading) {
-        return (
-            <div className="flex flex-column align-items-center justify-content-center h-20rem gap-4">
-                <ProgressSpinner />
-                <span className="text-sm font-bold text-500 uppercase tracking-widest">Accessing Secure Document...</span>
-            </div>
-        );
-    }
+    const documentOptions = [
+        { label: 'Confidential Incident Report (Incident_Report_01)', value: 'secure-redact-sample-pdf' },
+        { label: 'Witness Statement (Statement_Doe_9921)', value: 'api1-doc1' },
+        { label: 'Signed Search Warrant (Warrant_Signed_8842)', value: 'api3-doc1' },
+    ];
 
     return (
-        <div className="flex flex-column gap-4" style={{ height: 'calc(100vh - 10rem)' }}>
-            <Toast ref={toast} />
-            <div className="flex flex-column md:flex-row justify-content-between align-items-center surface-card p-4 border-round-xl shadow-2 border-1 border-200">
-                <div>
-                    <h1 className="text-2xl font-bold m-0 text-900 flex align-items-center gap-2">
-                        <i className="pi pi-shield text-red-500"></i>
-                        Secure Document Redaction
-                    </h1>
-                    <p className="text-sm text-500 m-0 mt-1">
-                        Sensitive Statement Masking Tool • File: <span className="text-primary font-bold">incident_report_confidential.pdf</span>
-                    </p>
+        <div className="flex flex-column gap-4" style={{ height: 'calc(100vh - 10rem)' }} id="pdf-redaction-page">
+            <div className="flex flex-column sm:flex-row justify-content-between align-items-stretch sm:align-items-center surface-card px-4 py-3 border-round-xl shadow-1 border-1 border-100 gap-3">
+                <div className="flex flex-column gap-1">
+                    <span className="text-xs font-bold text-500 uppercase tracking-wider">Select Secure Source Stream</span>
+                    <Dropdown 
+                        value={selectedDocId} 
+                        options={documentOptions} 
+                        onChange={(e) => setSelectedDocId(e.value)} 
+                        placeholder="Select a Document"
+                        className="w-full sm:w-25rem font-medium"
+                    />
+                </div>
+                <div className="text-right sm:text-left text-xs text-500 max-w-25rem">
+                    Choose a secure stream from the directory to fetch its PDF data, designate secure masking coordinates, and compile/sync the changes back via our API.
                 </div>
             </div>
 
             <div className="flex-1 min-h-0">
-                {pdfData && (
-                    <EmbedPDF 
-                        data={pdfData} 
-                        fileName="redacted_incident.pdf" 
-                        onSave={handleSave}
-                    />
-                )}
+                <DocumentRedactor documentId={selectedDocId} />
             </div>
         </div>
     );

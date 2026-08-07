@@ -1,7 +1,9 @@
 
 import axios from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TreeNode } from 'primereact/treenode';
+import { mockFetchContent } from './mockApi';
+import { Redaction } from '../components/EmbedPDF';
 
 // --- Types ---
 
@@ -242,5 +244,64 @@ export const useSearchTree = (term: string, enabled: boolean) => {
         enabled: enabled,
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false
+    });
+};
+
+/**
+ * Fetches raw PDF document data.
+ */
+export const fetchPdfDocument = async (documentId: string | number): Promise<{ base64: string; fileName: string }> => {
+    try {
+        const { data } = await apiClient.get<{ base64: string; fileName?: string }>(`/documents/${documentId}/pdf`);
+        return {
+            base64: data.base64,
+            fileName: data.fileName || `Document_${documentId}.pdf`
+        };
+    } catch (error) {
+        console.warn(`[Mock Service] fetchPdfDocument failed for ID ${documentId}. Returning mock PDF.`);
+        const mockPdf = await mockFetchContent('secure-redact-sample-pdf');
+        return {
+            base64: mockPdf.base64,
+            fileName: `Document_${documentId}.pdf`
+        };
+    }
+};
+
+/**
+ * Sends saved redactions back to the server to update the document.
+ */
+export const updateDocumentRedactions = async (documentId: string | number, redactions: Redaction[]): Promise<{ success: boolean; message: string }> => {
+    try {
+        const { data } = await apiClient.post<{ success: boolean; message: string }>(`/documents/${documentId}/redact`, { redactions });
+        return data;
+    } catch (error) {
+        console.warn(`[Mock Service] updateDocumentRedactions failed for ID ${documentId}. Simulating success.`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return {
+            success: true,
+            message: `Successfully applied ${redactions.length} redaction(s) to document ${documentId}`
+        };
+    }
+};
+
+// --- Custom Query & Mutation Hooks ---
+
+export const usePdfDocument = (documentId: string | number) => {
+    return useQuery({
+        queryKey: ['pdfDocument', documentId],
+        queryFn: () => fetchPdfDocument(documentId),
+        enabled: !!documentId,
+    });
+};
+
+export const useUpdateDocumentRedactions = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ documentId, redactions }: { documentId: string | number; redactions: Redaction[] }) => 
+            updateDocumentRedactions(documentId, redactions),
+        onSuccess: (data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['pdfDocument', variables.documentId] });
+            queryClient.invalidateQueries({ queryKey: ['document', variables.documentId] });
+        }
     });
 };

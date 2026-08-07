@@ -225,25 +225,24 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     return (
         <form onSubmit={handleSubmit} className={`p-fluid ${className}`}>
              {/* 
-                Using formgrid with 'pt-2' to give slight top spacing for floating labels in the first row if needed,
-                and row-gap-4 to ensure labels don't overlap with fields above when fields are stacked.
+                Using grid with gap-y-6 to give spacing for floating labels
              */}
-            <div className="formgrid grid row-gap-4 pt-2">
+            <div className="grid pt-2" style={{ rowGap: '1.5rem' }}>
                 {formContent}
 
-                <div className="col-12 mt-2 flex gap-2">
+                <div className="col-12 mt-4 flex gap-3">
                     <Button 
                         label={contextLabel} 
                         icon="pi pi-search" 
                         loading={loading} 
                         type="submit" 
-                        className="flex-1" 
+                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 border-none" 
                     />
                     <Button 
                         icon="pi pi-filter-slash" 
                         type="button" 
                         onClick={handleClear}
-                        className="p-button-secondary p-button-outlined w-3rem flex-shrink-0"
+                        className="p-button-secondary p-button-outlined w-3rem flex-shrink-0 text-600 border-300 hover:surface-hover flex align-items-center justify-content-center p-0"
                         tooltip="Clear All Filters"
                     />
                 </div>

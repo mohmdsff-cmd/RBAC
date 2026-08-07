@@ -146,15 +146,17 @@ export const UnifiedUpload: React.FC<UnifiedUploadProps> = ({
         const { className, chooseButton, uploadButton, cancelButton } = options;
         
         return (
-            <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
-                {chooseButton}
-                {uploadButton}
-                {cancelButton}
-                <div className="flex align-items-center gap-3 ml-auto">
-                    <span className="white-space-nowrap text-sm text-600">
+            <div className={`${className} flex align-items-center justify-content-between p-4 surface-ground border-bottom-1 border-100`}>
+                <div className="flex gap-2">
+                    {chooseButton}
+                    {uploadButton}
+                    {cancelButton}
+                </div>
+                <div className="flex align-items-center gap-3">
+                    <span className="white-space-nowrap text-sm font-medium text-600">
                         {totalSize > 0 ? `Pending: ${(totalSize / 1024 / 1024).toFixed(2)} MB` : 'Ready'}
                     </span>
-                    <Badge value={uploadType} severity="info"></Badge>
+                    <Badge value={uploadType} severity="info" className="bg-blue-100 text-blue-700"></Badge>
                 </div>
             </div>
         );
@@ -166,21 +168,25 @@ export const UnifiedUpload: React.FC<UnifiedUploadProps> = ({
         const isImage = f.type.startsWith('image/');
 
         return (
-            <div className="flex align-items-center flex-wrap p-3 surface-0 border-bottom-1 border-200">
-                <div className="flex align-items-center" style={{ width: '40%' }}>
-                     <i className={`pi ${isPdf ? 'pi-file-pdf text-red-500' : isImage ? 'pi-image text-blue-500' : 'pi-file text-gray-500'} text-xl mr-3`}></i>
-                    <span className="flex flex-column text-left">
-                        <span className="font-medium text-900">{f.name}</span>
-                        <small className="text-500">{new Date(f.lastModified).toLocaleDateString()}</small>
-                    </span>
+            <div className="flex align-items-center justify-content-between p-4 surface-card border-bottom-1 border-100 hover:surface-hover transition-colors">
+                <div className="flex align-items-center gap-4 w-6">
+                    <div className={`w-3rem h-3rem border-round-xl flex align-items-center justify-content-center ${isPdf ? 'bg-red-50 text-red-500' : isImage ? 'bg-blue-50 text-blue-500' : 'surface-100 text-500'}`}>
+                        <i className={`pi ${isPdf ? 'pi-file-pdf' : isImage ? 'pi-image' : 'pi-file'} text-xl`}></i>
+                    </div>
+                    <div className="flex flex-column">
+                        <span className="font-semibold text-900 white-space-nowrap overflow-hidden text-overflow-ellipsis">{f.name}</span>
+                        <span className="text-xs text-500">{new Date(f.lastModified).toLocaleDateString()}</span>
+                    </div>
                 </div>
-                <Tag value={props.formatSize} severity="warning" className="px-3 py-2" />
-                <Button 
-                    type="button" 
-                    icon="pi pi-times" 
-                    className="p-button-outlined p-button-rounded p-button-danger ml-auto" 
-                    onClick={() => onTemplateRemove(f, props.onRemove)} 
-                />
+                <div className="flex align-items-center gap-4">
+                    <Tag value={props.formatSize} severity="warning" className="px-3 py-1 border-round-3xl font-medium text-xs bg-orange-50 text-orange-700 border-1 border-orange-200" />
+                    <Button 
+                        type="button" 
+                        icon="pi pi-times" 
+                        className="p-button-rounded p-button-text p-button-danger w-2rem h-2rem p-0 hover:bg-red-50" 
+                        onClick={() => onTemplateRemove(f, props.onRemove)} 
+                    />
+                </div>
             </div>
         );
     };
@@ -188,12 +194,14 @@ export const UnifiedUpload: React.FC<UnifiedUploadProps> = ({
     const emptyTemplate = () => {
         return (
             <div 
-                className="flex align-items-center justify-content-center flex-column py-6 cursor-pointer hover:surface-100 transition-colors border-round w-full"
+                className="flex flex-column align-items-center justify-content-center py-6 cursor-pointer hover:surface-hover transition-colors border-round-xl w-full border-2 border-dashed border-200 m-4"
                 onClick={onDropZoneClick}
             >
-                <i className="pi pi-cloud-upload mt-3 p-5 text-5xl text-400 border-2 border-dashed border-300 border-circle bg-surface-50" />
-                <span className="text-lg text-500 mt-4 font-semibold">Drag and Drop Files Here</span>
-                <span className="text-sm text-400 mt-2">
+                <div className="w-4rem h-4rem bg-blue-50 text-blue-500 border-round-full flex align-items-center justify-content-center mb-4">
+                    <i className="pi pi-cloud-upload text-3xl" />
+                </div>
+                <span className="text-lg text-900 font-bold">Drag and Drop Files Here</span>
+                <span className="text-sm text-500 mt-2">
                     Accepted: {accept} • Max: {(maxFileSize / 1024 / 1024).toFixed(0)}MB
                 </span>
             </div>
@@ -201,18 +209,25 @@ export const UnifiedUpload: React.FC<UnifiedUploadProps> = ({
     };
 
     return (
-        <div className="surface-card p-4 shadow-2 border-round">
+        <div className="flex flex-column h-full">
             <Toast ref={toast} />
             
             <div className="flex justify-content-between align-items-center mb-4">
-                <div className="flex align-items-center gap-2">
-                    <span className="text-xl font-bold text-900">Upload Portal</span>
-                    <Tag value={typeInfo.label} className={`bg-${typeInfo.color}-100 text-${typeInfo.color}-700`} />
+                <div className="flex align-items-center gap-3">
+                    <div className="w-3rem h-3rem bg-indigo-50 text-indigo-600 border-round-xl flex align-items-center justify-content-center">
+                        <i className="pi pi-upload text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 className="text-lg font-bold text-900 m-0">Upload Portal</h2>
+                        <span className={`inline-block mt-1 text-xs font-medium px-2 py-1 border-round-3xl bg-${typeInfo.color}-50 text-${typeInfo.color}-700 border-1 border-${typeInfo.color}-200`}>
+                            {typeInfo.label}
+                        </span>
+                    </div>
                 </div>
             </div>
 
             {/* Wrapper div to scope DOM query for fallback click handling */}
-            <div ref={wrapperRef}>
+            <div ref={wrapperRef} className="flex-1 custom-fileupload">
                 <FileUpload 
                     key={uploadType}
                     ref={fileUploadRef} 
@@ -228,13 +243,31 @@ export const UnifiedUpload: React.FC<UnifiedUploadProps> = ({
                     headerTemplate={headerTemplate} 
                     itemTemplate={itemTemplate} 
                     emptyTemplate={emptyTemplate}
-                    chooseOptions={{ icon: 'pi pi-fw pi-plus', iconOnly: false, className: 'p-button-rounded p-button-outlined' }}
-                    uploadOptions={{ icon: 'pi pi-fw pi-cloud-upload', iconOnly: false, className: 'p-button-rounded p-button-success' }}
-                    cancelOptions={{ icon: 'pi pi-fw pi-trash', iconOnly: false, className: 'p-button-rounded p-button-danger' }}
+                    chooseOptions={{ icon: 'pi pi-fw pi-plus', label: 'Choose', className: 'p-button-outlined p-button-secondary' }}
+                    uploadOptions={{ icon: 'pi pi-fw pi-cloud-upload', label: 'Upload', className: 'p-button-primary' }}
+                    cancelOptions={{ icon: 'pi pi-fw pi-times', label: 'Cancel', className: 'p-button-text p-button-secondary' }}
                     customUpload
                     uploadHandler={customUploadHandler}
                 />
             </div>
+            <style>{`
+                .custom-fileupload .p-fileupload {
+                    border: 1px solid #e2e8f0;
+                    border-radius: 1rem;
+                    overflow: hidden;
+                    background: #fff;
+                }
+                .custom-fileupload .p-fileupload-content {
+                    padding: 0;
+                    border: none;
+                }
+                .custom-fileupload .p-button {
+                    border-radius: 0.5rem;
+                    font-weight: 500;
+                    font-size: 0.875rem;
+                    padding: 0.5rem 1rem;
+                }
+            `}</style>
         </div>
     );
 };

@@ -197,34 +197,34 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
     };
 
     const detailHeader = (
-        <div className="flex flex-wrap align-items-center justify-content-between px-3 py-2 surface-card border-bottom-1 border-200 z-5 shadow-1 gap-2">
+        <div className="flex flex-wrap align-items-center justify-content-between px-3 py-2 surface-0 border-bottom-1 border-200 z-5 shadow-1 gap-2">
             <div className="flex flex-column">
-                <span className="font-bold text-700 text-sm">{activeItem?.title || 'Unknown Asset'}</span>
+                <span className="font-semibold text-800 text-sm">{activeItem?.title || 'Unknown Asset'}</span>
                 <span className="text-xs text-500">Page {pageNumber} of {localItems.length || 0}</span>
             </div>
 
             <div className="flex gap-2 align-items-center">
-                <div className="flex align-items-center bg-surface-50 border-1 border-200 border-round-lg shadow-sm overflow-hidden h-2rem">
-                    <Button icon="pi pi-minus" onClick={handleZoomOut} size="small" text severity="secondary" className="p-1 h-full w-2rem" />
-                    <span className="px-2 text-xs font-bold text-700 border-x-1 border-200 select-none min-w-3rem text-center bg-surface-0 h-full flex align-items-center justify-content-center">
+                <div className="flex align-items-center surface-50 border-1 border-200 border-round-lg shadow-1 overflow-hidden h-2rem">
+                    <Button icon="pi pi-minus" onClick={handleZoomOut} size="small" text severity="secondary" className="p-1 h-full w-2rem text-600 hover:surface-hover" />
+                    <span className="px-2 text-xs font-mono font-medium text-700 border-x-1 border-200 select-none min-w-3rem text-center surface-0 h-full flex align-items-center justify-content-center">
                         {Math.round(zoom * 100)}%
                     </span>
-                    <Button icon="pi pi-plus" onClick={handleZoomIn} size="small" text severity="secondary" className="p-1 h-full w-2rem" />
-                    <Button icon="pi pi-expand" onClick={handleFitScreen} size="small" text severity="secondary" className="p-1 h-full w-2rem border-left-1 border-200" tooltip="Fit" />
+                    <Button icon="pi pi-plus" onClick={handleZoomIn} size="small" text severity="secondary" className="p-1 h-full w-2rem text-600 hover:surface-hover" />
+                    <Button icon="pi pi-expand" onClick={handleFitScreen} size="small" text severity="secondary" className="p-1 h-full w-2rem border-left-1 border-200 text-600 hover:surface-hover" tooltip="Fit" />
                 </div>
-                <div className="w-1px h-2rem bg-300 mx-1"></div>
+                <div className="w-1px h-2rem surface-200 mx-1"></div>
                 
-                <Button icon="pi pi-refresh" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} />
-                <Button icon="pi pi-refresh" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" />
+                <Button icon="pi pi-refresh" onClick={handleRotateCcw} rounded text severity="secondary" tooltip="Rotate Left" style={{ transform: 'scaleX(-1)' }} className="text-600 hover:surface-hover" />
+                <Button icon="pi pi-refresh" onClick={handleRotateCw} rounded text severity="secondary" tooltip="Rotate Right" className="text-600 hover:surface-hover" />
                 
-                <div className="w-1px h-2rem bg-300 mx-1"></div>
+                <div className="w-1px h-2rem surface-200 mx-1"></div>
 
-                <Button icon="pi pi-print" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" />
-                <Button icon="pi pi-download" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" />
+                <Button icon="pi pi-print" onClick={handlePrint} rounded text severity="secondary" tooltip="Print" className="text-600 hover:surface-hover" />
+                <Button icon="pi pi-download" onClick={handleDownload} rounded text severity="secondary" tooltip="Download" className="text-600 hover:surface-hover" />
                 
-                <div className="w-1px h-2rem bg-300 mx-1"></div>
+                <div className="w-1px h-2rem surface-200 mx-1"></div>
 
-                <Button icon="pi pi-info-circle" onClick={() => setShowInfoPanel(!showInfoPanel)} rounded text severity={showInfoPanel ? 'primary' : 'secondary'} tooltip="Metadata" />
+                <Button icon="pi pi-info-circle" onClick={() => setShowInfoPanel(!showInfoPanel)} rounded text severity={showInfoPanel ? 'primary' : 'secondary'} tooltip="Metadata" className={showInfoPanel ? "text-indigo-600 bg-indigo-50" : "text-600 hover:surface-hover"} />
             </div>
         </div>
     );
@@ -257,26 +257,26 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
         <div className={`flex flex-row h-full surface-card overflow-hidden ${className}`} style={style}>
             
             {/* 1. Left Sidebar: Thumbnails */}
-            <div className="w-6rem md:w-7rem bg-surface-100 border-right-1 border-200 flex-shrink-0 flex flex-column z-2">
-                <div className="p-2 flex flex-column gap-2 align-items-center bg-surface-50 border-bottom-1 border-200">
-                     <span className="text-xs font-bold text-600">PAGES</span>
+            <div className="w-6rem md:w-7rem surface-50 border-right-1 border-200 flex-shrink-0 flex flex-column z-2">
+                <div className="p-2 flex flex-column gap-2 align-items-center surface-0 border-bottom-1 border-200">
+                     <span className="text-xs font-semibold text-500 tracking-wider">PAGES</span>
                      <div className="flex align-items-center justify-content-between w-full gap-1">
                         <Button 
                             icon="pi pi-angle-left" 
                             text 
                             rounded 
                             size="small"
-                            className="w-1.5rem h-1.5rem p-0"
+                            className="w-1.5rem h-1.5rem p-0 text-600 hover:surface-hover"
                             disabled={activeIndex === 0}
                             onClick={() => setActiveIndex(Math.max(0, activeIndex - 1))}
                         />
-                        <span className="text-xs font-semibold text-700">{pageNumber} / {localItems.length}</span>
+                        <span className="text-xs font-mono font-medium text-700">{pageNumber} / {localItems.length}</span>
                         <Button 
                             icon="pi pi-angle-right" 
                             text 
                             rounded 
                             size="small"
-                            className="w-1.5rem h-1.5rem p-0"
+                            className="w-1.5rem h-1.5rem p-0 text-600 hover:surface-hover"
                             disabled={activeIndex === localItems.length - 1}
                             onClick={() => setActiveIndex(Math.min(localItems.length - 1, activeIndex + 1))}
                         />
@@ -292,13 +292,13 @@ export const GalleryViewer: React.FC<GalleryViewerProps> = ({
                             key={item.id} 
                             onClick={() => setActiveIndex(index)}
                             className={`
-                                flex-shrink-0 cursor-pointer border-round-md overflow-hidden transition-all border-2 relative w-full aspect-ratio-square
-                                ${index === activeIndex ? 'border-primary shadow-2 scale-105' : 'border-200 opacity-70 hover:opacity-100 hover:border-300'}
+                                flex-shrink-0 cursor-pointer border-round-md overflow-hidden transition-all border-2 relative w-full
+                                ${index === activeIndex ? 'border-indigo-500 shadow-1' : 'border-200 opacity-70 hover:opacity-100 hover:border-indigo-300'}
                             `}
                             style={{ height: 'auto', aspectRatio: '1/1' }}
                         >
                             <img src={item.thumbnail} alt={`Page ${index + 1}`} className="w-full h-full object-cover" />
-                            <div className="absolute top-0 right-0 bg-black-alpha-60 text-white text-xs px-1 border-bottom-left-radius-xs">
+                            <div className="absolute top-0 right-0 bg-gray-900 text-white text-xs px-1 border-bottom-left-radius-xs font-mono" style={{ opacity: 0.7 }}>
                                 {index + 1}
                             </div>
                         </div>
